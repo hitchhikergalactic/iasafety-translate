@@ -31,8 +31,8 @@ export interface RevisionConfig {
 }
 
 const DEFAULT_SPOT_ERRORS_MODEL = "gemini-2.0-flash";
-const DEFAULT_IMPROVE_FLOW_MODEL = "gemini-2.0-pro";
-const DEFAULT_GLOBAL_REVIEW_MODEL = "gemini-2.0-pro";
+const DEFAULT_IMPROVE_FLOW_MODEL = "gemini-2.5-flash";
+const DEFAULT_GLOBAL_REVIEW_MODEL = "gemini-2.5-flash";
 
 export async function reviseTranslation(
   sourceText: string,

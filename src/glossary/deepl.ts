@@ -1,4 +1,8 @@
-const DEEPL_BASE_URL = "https://api.deepl.com/v2";
+function getDeeplBaseUrl(apiKey: string): string {
+  return apiKey.endsWith(":fx")
+    ? "https://api-free.deepl.com/v2"
+    : "https://api.deepl.com/v2";
+}
 
 export interface DeepLGlossary {
   glossary_id: string;
@@ -9,7 +13,7 @@ export interface DeepLGlossary {
 }
 
 export async function listGlossaries(apiKey: string): Promise<DeepLGlossary[]> {
-  const res = await fetch(`${DEEPL_BASE_URL}/glossaries`, {
+  const res = await fetch(`${getDeeplBaseUrl(apiKey)}/glossaries`, {
     headers: { Authorization: `DeepL-Auth-Key ${apiKey}` },
   });
   if (!res.ok) throw new Error(`DeepL glossary list failed: ${res.status}`);
@@ -24,7 +28,7 @@ export async function createGlossary(
   targetLang: string,
   entriesTsv: string
 ): Promise<DeepLGlossary> {
-  const res = await fetch(`${DEEPL_BASE_URL}/glossaries`, {
+  const res = await fetch(`${getDeeplBaseUrl(apiKey)}/glossaries`, {
     method: "POST",
     headers: {
       Authorization: `DeepL-Auth-Key ${apiKey}`,
@@ -49,7 +53,7 @@ export async function deleteGlossary(
   apiKey: string,
   glossaryId: string
 ): Promise<void> {
-  const res = await fetch(`${DEEPL_BASE_URL}/glossaries/${glossaryId}`, {
+  const res = await fetch(`${getDeeplBaseUrl(apiKey)}/glossaries/${glossaryId}`, {
     method: "DELETE",
     headers: { Authorization: `DeepL-Auth-Key ${apiKey}` },
   });

@@ -1,870 +1,1352 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tlon-translate</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #ddd; padding: 20px; }
-    h1 { font-size: 1.4em; margin-bottom: 16px; color: #fff; }
-    h2 { font-size: 1.1em; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EA Translate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg: #FDFAF6;
+  --surface: #F5EFE7;
+  --surface-raised: #FFFCF8;
+  --border: #E7DFD5;
+  --border-strong: #D4C9BC;
+  --text: #1C1917;
+  --text-secondary: #78716C;
+  --text-muted: #A8A29E;
+  --accent: #B45309;
+  --accent-hover: #92400E;
+  --accent-light: #FEF3C7;
+  --accent-subtle: #FFFBEB;
+  --success: #16A34A;
+  --success-bg: #F0FDF4;
+  --error: #DC2626;
+  --error-bg: #FEF2F2;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(28,25,23,.06);
+  --shadow: 0 2px 8px rgba(28,25,23,.08);
+  --shadow-lg: 0 8px 24px rgba(28,25,23,.1);
+  --transition: 200ms cubic-bezier(.4,0,.2,1);
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+html { font-size: 15px; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
 
-    .tabs { display: flex; gap: 2px; margin-bottom: 16px; }
-    .tab { padding: 8px 16px; background: #222; border: 1px solid #333; border-bottom: none; cursor: pointer; color: #888; border-radius: 6px 6px 0 0; }
-    .tab.active { background: #1a1a2e; color: #fff; border-color: #444; }
+/* --- Header --- */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  background: rgba(253,250,246,.92);
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  height: 56px;
+}
+.logo {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.logo span { color: var(--accent); }
 
-    .panel { display: none; background: #1a1a2e; border: 1px solid #333; border-radius: 0 8px 8px 8px; padding: 20px; }
-    .panel.active { display: block; }
+nav {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav::-webkit-scrollbar { display: none; }
+nav button {
+  font-family: var(--font-sans);
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: .5rem 1rem;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  transition: color var(--transition);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+nav button:hover { color: var(--text); }
+nav button.active { color: var(--accent); }
+nav button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: .75rem;
+  right: .75rem;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
 
-    .row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-    .col { flex: 1; min-width: 300px; }
+.health-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+.health-dot.ok { background: var(--success); }
+.health-dot.error { background: var(--error); }
 
-    textarea { width: 100%; min-height: 200px; background: #0d0d1a; color: #eee; border: 1px solid #333; border-radius: 6px; padding: 10px; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; resize: vertical; }
-    textarea:focus { outline: none; border-color: #556; }
+/* --- Main --- */
+main {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  flex: 1;
+}
 
-    select, input[type="text"], input[type="number"] {
-      background: #0d0d1a; color: #eee; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 13px;
-    }
-    select:focus, input:focus { outline: none; border-color: #556; }
+/* --- Sections --- */
+.section { display: none; }
+.section.active { display: block; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #aaa; cursor: pointer; }
-    label input[type="checkbox"] { accent-color: #66a; }
+.section-header { margin-bottom: 2rem; }
+.section-header h1 {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin-bottom: .5rem;
+}
+.section-header p {
+  color: var(--text-secondary);
+  font-size: .95rem;
+  max-width: 600px;
+}
 
-    button {
-      padding: 8px 20px; background: #2a2a4a; color: #ddd; border: 1px solid #444;
-      border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.15s;
-    }
-    button:hover { background: #3a3a5a; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    button.primary { background: #335; border-color: #557; }
-    button.primary:hover { background: #446; }
-    button.danger { background: #422; border-color: #644; }
-    button.danger:hover { background: #533; }
+/* --- Cards --- */
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.card-title .badge {
+  font-family: var(--font-sans);
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: .15rem .5rem;
+  border-radius: 99px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
 
-    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+/* --- Form elements --- */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  flex: 1;
+  min-width: 180px;
+}
+.form-group.narrow { flex: 0 0 auto; min-width: 140px; }
+label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-secondary);
+}
+textarea, input[type="text"], input[type="url"], input[type="number"] {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  line-height: 1.6;
+  padding: .65rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+}
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+textarea { min-height: 160px; }
+textarea.tall { min-height: 300px; }
+select {
+  font-family: var(--font-sans);
+  font-size: .85rem;
+  padding: .65rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378716C' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  padding-right: 2rem;
+  width: 100%;
+}
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .85rem;
+  color: var(--text-secondary);
+}
+.checkbox-row input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px; height: 16px;
+}
 
-    .result-box { background: #0d0d1a; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-top: 8px; white-space: pre-wrap; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; max-height: 400px; overflow-y: auto; }
+/* --- Buttons --- */
+.btn {
+  font-family: var(--font-sans);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .03em;
+  padding: .6rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: var(--shadow);
+}
+.btn-secondary {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--text-muted);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: .4rem .75rem;
+}
+.btn-ghost:hover { color: var(--text); background: var(--surface); }
+.btn-row {
+  display: flex;
+  gap: .75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
 
-    .stage { margin-top: 12px; border: 1px solid #2a2a3a; border-radius: 6px; overflow: hidden; }
-    .stage-header { padding: 8px 12px; background: #1e1e2e; cursor: pointer; display: flex; justify-content: space-between; font-size: 13px; }
-    .stage-header .time { color: #666; }
-    .stage-body { padding: 10px; background: #0d0d1a; white-space: pre-wrap; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; max-height: 300px; overflow-y: auto; display: none; }
-    .stage-body.open { display: block; }
+/* --- Output --- */
+.output-area {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 80px;
+  max-height: 500px;
+  overflow-y: auto;
+  color: var(--text);
+}
+.output-area:empty::before {
+  content: 'Output will appear here...';
+  color: var(--text-muted);
+  font-style: italic;
+}
 
-    .status { padding: 6px 12px; border-radius: 4px; font-size: 13px; margin-top: 8px; }
-    .status.ok { background: #1a2e1a; color: #6d6; border: 1px solid #2a4a2a; }
-    .status.error { background: #2e1a1a; color: #d66; border: 1px solid #4a2a2a; }
-    .status.loading { background: #1a1a2e; color: #88a; border: 1px solid #2a2a4a; }
+/* --- Status / Spinner --- */
+.status {
+  font-size: .8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.status.error { color: var(--error); }
+.status.success { color: var(--success); }
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    .error-list { list-style: none; padding: 0; }
-    .error-list li { padding: 4px 8px; background: #2e1a1a; border-left: 3px solid #d66; margin-bottom: 4px; font-size: 13px; border-radius: 0 4px 4px 0; }
-    .ok-msg { color: #6d6; font-size: 13px; }
+/* --- Stage pipeline --- */
+.stages { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
+.stage {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem .75rem;
+  border-radius: var(--radius);
+  font-size: .82rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.stage-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.stage.done .stage-dot { background: var(--success); }
+.stage.running .stage-dot { background: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.stage-name { flex: 1; font-weight: 500; }
+.stage-time { color: var(--text-muted); font-family: var(--font-mono); font-size: .75rem; }
 
-    .glossary-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-    .glossary-table th, .glossary-table td { padding: 6px 10px; border: 1px solid #333; text-align: left; }
-    .glossary-table th { background: #1e1e2e; color: #aaa; }
+/* --- Two-column layout --- */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 768px) { .columns { grid-template-columns: 1fr; } }
 
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #444; border-top-color: #88a; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+/* --- Table --- */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+}
+.results-table th {
+  text-align: left;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.results-table td {
+  padding: .6rem .75rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+}
+.results-table tr:last-child td { border-bottom: none; }
+.results-table .status-done { color: var(--success); font-weight: 500; }
+.results-table .status-error { color: var(--error); font-weight: 500; }
 
-    .health { position: fixed; top: 10px; right: 16px; font-size: 12px; }
-    .health .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
-    .health .dot.green { background: #6d6; }
-    .health .dot.red { background: #d66; }
-    .health .dot.yellow { background: #dd6; }
-  </style>
+/* --- Tags / Terms --- */
+.tag {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 500;
+  padding: .15rem .5rem;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+.term-list { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.term-item {
+  font-size: .78rem;
+  padding: .25rem .6rem;
+  border-radius: var(--radius);
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-light);
+  color: var(--accent-hover);
+  font-family: var(--font-mono);
+}
+
+/* --- Tooltips --- */
+.tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  color: var(--surface-raised);
+  font-size: .6rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  cursor: help;
+  margin-left: .35rem;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  font-size: .72rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.45;
+  padding: .45rem .65rem;
+  border-radius: var(--radius);
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition);
+  z-index: 200;
+  box-shadow: var(--shadow-lg);
+}
+.tip:hover::after { opacity: 1; }
+
+.gh-link {
+  color: var(--text-muted);
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+.gh-link:hover { color: var(--text); }
+
+/* --- Footer --- */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  font-size: .75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}
+
+/* Subtle noise texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  z-index: 0;
+}
+body > * { position: relative; z-index: 1; }
+</style>
 </head>
 <body>
 
-<h1>tlon-translate</h1>
-<div class="health" id="health"></div>
+<header>
+  <div class="header-inner">
+    <div class="logo">EA <span>Translate</span></div>
+    <nav id="nav">
+      <button class="active" data-tab="pipeline">Pipeline</button>
+      <button data-tab="import">Import</button>
+      <button data-tab="translate">Translate</button>
+      <button data-tab="revise">Revise</button>
+      <button data-tab="fix">Auto-fix</button>
+      <button data-tab="glossary">Glossary</button>
+      <button data-tab="batch">Batch</button>
+    </nav>
+    <a href="https://github.com/alejoacelas/ea-translate" target="_blank" rel="noopener" class="gh-link" title="View on GitHub">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </a>
+    <div class="health-dot" id="healthDot" title="Checking API status..."></div>
+  </div>
+</header>
 
-<div class="tabs">
-  <div class="tab active" data-panel="pipeline">Full Pipeline</div>
-  <div class="tab" data-panel="deepl">DeepL Only</div>
-  <div class="tab" data-panel="autofix">Auto-Fix</div>
-  <div class="tab" data-panel="checks">Structural Checks</div>
-  <div class="tab" data-panel="yaml">YAML</div>
-  <div class="tab" data-panel="glossary">Glossary</div>
-  <div class="tab" data-panel="import">Import</div>
-  <div class="tab" data-panel="batch">Batch</div>
+<main>
+
+<!-- ===== PIPELINE ===== -->
+<div class="section active" id="sec-pipeline">
+  <div class="section-header">
+    <h1>Translation Pipeline</h1>
+    <p>Full end-to-end workflow: paste or import text, translate with DeepL, revise with AI, and auto-fix.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Source Text</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Import from URL (optional)</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="url" id="pipe-url" placeholder="https://forum.effectivealtruism.org/..." style="flex:1">
+          <button class="btn btn-secondary" id="pipe-import-btn">Import</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>English source</label>
+      <textarea id="pipe-source" class="tall" placeholder="Paste English text or import from URL above..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    <div class="form-row">
+      <div class="form-group narrow">
+        <label>Target Language</label>
+        <select id="pipe-lang"></select>
+      </div>
+      <div class="form-group narrow">
+        <label>DeepL Model <span class="tip" data-tip="Quality mode is slower but more accurate. Fast mode uses less compute for quicker results.">?</span></label>
+        <select id="pipe-model">
+          <option value="quality_optimized">Quality</option>
+          <option value="latency_optimized">Fast</option>
+        </select>
+      </div>
+      <div class="form-group narrow" style="justify-content:flex-end;">
+        <div class="checkbox-row"><input type="checkbox" id="pipe-skip-rev"><label for="pipe-skip-rev" style="text-transform:none;font-weight:400;">Skip AI revision <span class="tip" data-tip="Skips the 3-pass Gemini revision step. Faster but less polished output.">?</span></label></div>
+        <div class="checkbox-row"><input type="checkbox" id="pipe-skip-fix"><label for="pipe-skip-fix" style="text-transform:none;font-weight:400;">Skip auto-fix <span class="tip" data-tip="Skips typography fixes, thousands separators, and heading normalization.">?</span></label></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="pipe-run-btn">Run Pipeline</button>
+      <span class="status" id="pipe-status"></span>
+    </div>
+  </div>
+
+  <div class="card" id="pipe-stages-card" style="display:none;">
+    <div class="card-title">Progress</div>
+    <div class="stages" id="pipe-stages"></div>
+  </div>
+
+  <div class="card" id="pipe-result-card" style="display:none;">
+    <div class="card-title">Result</div>
+    <div class="output-area" id="pipe-output"></div>
+    <div style="margin-top:.75rem">
+      <button class="btn btn-ghost" id="pipe-copy-btn">Copy to clipboard</button>
+    </div>
+  </div>
 </div>
 
-<!-- Full Pipeline -->
-<div class="panel active" id="pipeline">
-  <h2>Full Translation Pipeline</h2>
-  <div class="controls">
-    <select id="pipe-lang"></select>
-    <select id="pipe-model">
-      <option value="quality_optimized">quality_optimized</option>
-      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
-      <option value="latency_optimized">latency_optimized</option>
-    </select>
-    <label><input type="checkbox" id="pipe-skip-revision"> Skip AI Revision</label>
-    <label><input type="checkbox" id="pipe-skip-autofix"> Skip Auto-Fix</label>
-    <label>Chunk size: <input type="number" id="pipe-chunk" value="10" style="width:50px"></label>
-    <label>Parallel: <input type="number" id="pipe-parallel" value="3" style="width:50px"></label>
-    <button class="primary" id="pipe-run">Translate</button>
+<!-- ===== IMPORT ===== -->
+<div class="section" id="sec-import">
+  <div class="section-header">
+    <h1>Import Article</h1>
+    <p>Fetch and extract content from EA Forum, 80,000 Hours, or any web page.</p>
   </div>
-  <div class="row">
-    <div class="col">
-      <h2>Source (English)</h2>
-      <textarea id="pipe-input" placeholder="Paste your English source text here..."></textarea>
+
+  <div class="card">
+    <div class="card-title">Source URL</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>URL</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="url" id="import-url" placeholder="https://..." style="flex:1">
+          <button class="btn btn-primary" id="import-btn">Import</button>
+        </div>
+      </div>
     </div>
-    <div class="col">
-      <h2>Final Output</h2>
-      <div class="result-box" id="pipe-output" style="min-height:200px"></div>
+    <span class="status" id="import-status"></span>
+  </div>
+
+  <div class="card" id="import-result-card" style="display:none;">
+    <div class="card-title">Extracted Content <span class="badge" id="import-source-badge"></span></div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Title</label>
+      <input type="text" id="import-title" readonly>
+    </div>
+    <div class="form-group">
+      <label>Body (Markdown)</label>
+      <div class="output-area" id="import-body" style="max-height:400px;"></div>
+    </div>
+    <div style="margin-top:.75rem" class="btn-row">
+      <button class="btn btn-primary" id="import-to-pipeline-btn">Send to Pipeline</button>
+      <button class="btn btn-ghost" id="import-copy-btn">Copy body</button>
     </div>
   </div>
-  <div id="pipe-stages"></div>
-  <div id="pipe-status"></div>
 </div>
 
-<!-- DeepL Only -->
-<div class="panel" id="deepl">
-  <h2>DeepL Translation</h2>
-  <div class="controls">
-    <select id="deepl-lang"></select>
-    <select id="deepl-model">
-      <option value="quality_optimized">quality_optimized</option>
-      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
-      <option value="latency_optimized">latency_optimized</option>
-    </select>
-    <button class="primary" id="deepl-run">Translate</button>
+<!-- ===== TRANSLATE ===== -->
+<div class="section" id="sec-translate">
+  <div class="section-header">
+    <h1>DeepL Translate</h1>
+    <p>Direct machine translation via the DeepL API with newline-preservation workaround for quality mode.</p>
   </div>
-  <div class="row">
-    <div class="col">
-      <h2>Source</h2>
-      <textarea id="deepl-input" placeholder="Text to translate..."></textarea>
+
+  <div class="columns">
+    <div class="card">
+      <div class="card-title">Source <span class="badge">English</span></div>
+      <div class="form-group">
+        <textarea id="tl-source" placeholder="Paste English text..."></textarea>
+      </div>
+      <div class="form-row" style="margin-top:1rem;">
+        <div class="form-group narrow">
+          <label>Target Language</label>
+          <select id="tl-lang"></select>
+        </div>
+        <div class="form-group narrow">
+          <label>Model <span class="tip" data-tip="Quality mode is slower but more accurate. Fast mode uses less compute for quicker results.">?</span></label>
+          <select id="tl-model">
+            <option value="quality_optimized">Quality</option>
+            <option value="latency_optimized">Fast</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="tl-btn">Translate</button>
+        <span class="status" id="tl-status"></span>
+      </div>
     </div>
-    <div class="col">
-      <h2>Translation</h2>
-      <div class="result-box" id="deepl-output" style="min-height:200px"></div>
+    <div class="card">
+      <div class="card-title">Translation</div>
+      <div class="output-area" id="tl-output"></div>
+      <div style="margin-top:.75rem" class="btn-row">
+        <button class="btn btn-ghost" id="tl-copy-btn">Copy</button>
+        <button class="btn btn-ghost" id="tl-to-revise-btn">Send to Revise</button>
+      </div>
     </div>
   </div>
-  <div id="deepl-status"></div>
 </div>
 
-<!-- Auto-Fix -->
-<div class="panel" id="autofix">
-  <h2>Auto-Fix Rules</h2>
-  <div class="controls">
-    <select id="fix-lang">
-      <option value="fr">French</option>
-      <option value="it">Italian</option>
-      <option value="es">Spanish</option>
-      <option value="de">German</option>
-      <option value="en">English</option>
-    </select>
-    <button class="primary" id="fix-run">Apply Fixes</button>
-    <button id="fix-lang-only">Language Rules Only</button>
+<!-- ===== REVISE ===== -->
+<div class="section" id="sec-revise">
+  <div class="section-header">
+    <h1>AI Revision</h1>
+    <p>Three-pass Gemini revision: spot errors, improve flow, global review.</p>
   </div>
-  <div class="row">
-    <div class="col">
-      <h2>Input</h2>
+
+  <div class="columns">
+    <div class="card">
+      <div class="card-title">English Source</div>
+      <textarea id="rev-source" placeholder="Paste the original English text..."></textarea>
+    </div>
+    <div class="card">
+      <div class="card-title">Translation to Revise</div>
+      <textarea id="rev-translated" placeholder="Paste the translation to be revised..."></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Configuration</div>
+    <div class="form-row">
+      <div class="form-group narrow">
+        <label>Target Language</label>
+        <select id="rev-lang"></select>
+      </div>
+      <div class="form-group narrow">
+        <label>Chunk Size <span class="tip" data-tip="Number of paragraphs processed together per revision pass. Smaller = more precise, larger = faster.">?</span></label>
+        <input type="number" id="rev-chunk" value="10" min="1" max="50">
+      </div>
+      <div class="form-group narrow">
+        <label>Max Parallel <span class="tip" data-tip="How many chunks to revise concurrently. Higher = faster but uses more API quota.">?</span></label>
+        <input type="number" id="rev-parallel" value="3" min="1" max="10">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="rev-btn">Run 3-Pass Revision</button>
+      <span class="status" id="rev-status"></span>
+    </div>
+  </div>
+
+  <div class="card" id="rev-result-card" style="display:none;">
+    <div class="card-title">Revised Translation</div>
+    <div class="output-area" id="rev-output"></div>
+    <div style="margin-top:.75rem" class="btn-row">
+      <button class="btn btn-ghost" id="rev-copy-btn">Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FIX ===== -->
+<div class="section" id="sec-fix">
+  <div class="section-header">
+    <h1>Auto-fix & Check</h1>
+    <p>Language-specific fixes (typography, separators, heading hierarchy) and structural validation.</p>
+  </div>
+
+  <div class="columns">
+    <div class="card">
+      <div class="card-title">Input Text</div>
       <textarea id="fix-input" placeholder="Paste translated text to fix..."></textarea>
-    </div>
-    <div class="col">
-      <h2>Fixed Output</h2>
-      <div class="result-box" id="fix-output" style="min-height:200px"></div>
-    </div>
-  </div>
-  <div id="fix-status"></div>
-</div>
-
-<!-- Structural Checks -->
-<div class="panel" id="checks">
-  <h2>Structural Checks</h2>
-  <div class="controls">
-    <button class="primary" id="checks-run">Run Checks</button>
-  </div>
-  <textarea id="checks-input" placeholder="Paste text to check heading hierarchy and balanced characters..." style="min-height:150px"></textarea>
-  <div id="checks-results" style="margin-top:12px"></div>
-</div>
-
-<!-- YAML -->
-<div class="panel" id="yaml">
-  <h2>YAML Frontmatter</h2>
-  <div class="controls">
-    <button class="primary" id="yaml-parse">Parse Document</button>
-    <select id="yaml-type">
-      <option value="article">Article</option>
-      <option value="tag">Tag</option>
-      <option value="author">Author</option>
-      <option value="collection">Collection</option>
-    </select>
-    <button id="yaml-validate">Validate Fields</button>
-  </div>
-  <div class="row">
-    <div class="col">
-      <h2>Document</h2>
-      <textarea id="yaml-input" placeholder="---&#10;title: My Article&#10;tags:&#10;  - ethics&#10;---&#10;Body text here..."></textarea>
-    </div>
-    <div class="col">
-      <h2>Parsed</h2>
-      <div class="result-box" id="yaml-output" style="min-height:200px"></div>
-    </div>
-  </div>
-  <div id="yaml-status"></div>
-</div>
-
-<!-- Glossary -->
-<div class="panel" id="glossary">
-  <h2>Glossary Management</h2>
-
-  <div style="margin-bottom: 16px">
-    <h2>Local Glossary (JSON)</h2>
-    <div class="controls">
-      <select id="gloss-lang">
-        <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="it">Italian</option>
-        <option value="de">German</option>
-      </select>
-      <button class="primary" id="gloss-parse">Analyze</button>
-    </div>
-    <textarea id="gloss-input" style="min-height:100px" placeholder='[{"en":"existential risk","es":"riesgo existencial","type":"variable"}]'></textarea>
-    <div class="result-box" id="gloss-output" style="margin-top:8px"></div>
-  </div>
-
-  <div>
-    <h2>DeepL Glossaries (Remote)</h2>
-    <div class="controls">
-      <button id="gloss-deepl-list">List Glossaries</button>
-    </div>
-    <div id="gloss-deepl-output"></div>
-  </div>
-
-  <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 16px">
-    <h2>AI Glossary Generation</h2>
-    <div class="controls">
-      <select id="gloss-ai-lang"></select>
-      <button class="primary" id="gloss-ai-generate">Generate Missing Translations</button>
-    </div>
-    <p style="font-size:12px; color:#666; margin-bottom:8px">Uses the glossary JSON entered above. Select the target language to generate missing translations for.</p>
-    <div id="gloss-ai-status"></div>
-    <div id="gloss-ai-results" style="display:none; margin-top:12px">
-      <div style="margin-bottom:12px">
-        <h2>Generated Translations</h2>
-        <div class="result-box" id="gloss-ai-generated" style="min-height:80px"></div>
+      <div class="form-row" style="margin-top:1rem;">
+        <div class="form-group narrow">
+          <label>Language Code <span class="tip" data-tip="ISO code for the translation language. Determines which typography and separator rules to apply.">?</span></label>
+          <select id="fix-lang-code"></select>
+        </div>
       </div>
-      <div id="gloss-ai-unavailable-wrap" style="display:none; margin-bottom:12px">
-        <h2>Unavailable Terms</h2>
-        <div class="result-box" id="gloss-ai-unavailable" style="min-height:40px"></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="fix-all-btn">Auto-fix All <span class="tip" data-tip="Runs all fixes: typography, thousands separators, and language-specific rules.">?</span></button>
+        <button class="btn btn-secondary" id="fix-lang-btn">Language Fixes Only <span class="tip" data-tip="Only applies language-specific fixes (e.g. quote style, punctuation spacing).">?</span></button>
+        <button class="btn btn-secondary" id="fix-check-btn">Check Structure <span class="tip" data-tip="Validates heading hierarchy and checks for unbalanced brackets/quotes.">?</span></button>
+        <span class="status" id="fix-status"></span>
       </div>
-      <div class="controls">
-        <button id="gloss-ai-download">Download Updated Glossary</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Result</div>
+      <div class="output-area" id="fix-output"></div>
+      <div id="fix-checks" style="margin-top:.75rem;display:none;">
+        <div class="card-title" style="font-size:.9rem;">Structural Checks</div>
+        <div id="fix-checks-content"></div>
+      </div>
+      <div style="margin-top:.75rem">
+        <button class="btn btn-ghost" id="fix-copy-btn">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GLOSSARY ===== -->
+<div class="section" id="sec-glossary">
+  <div class="section-header">
+    <h1>Glossary</h1>
+    <p>Parse, generate AI translations for missing terms, filter relevant terms, and manage DeepL glossaries.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Local Glossary <span class="badge">Parse & Analyze</span></div>
+    <div class="form-group">
+      <label>Glossary JSON <span class="tip" data-tip='Array of objects with &quot;en&quot; key and language-code keys, e.g. [{"en":"term","es":"traducción"}]'>?</span></label>
+      <textarea id="gloss-json" placeholder='[{"en":"effective altruism","es":"altruismo eficaz"}, ...]'></textarea>
+    </div>
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group narrow">
+        <label>Target Language</label>
+        <select id="gloss-lang"></select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="gloss-parse-btn">Parse & Analyze</button>
+      <span class="status" id="gloss-parse-status"></span>
+    </div>
+    <div id="gloss-parse-result" style="display:none;margin-top:1rem;">
+      <div class="form-row">
+        <div class="tag">Total: <strong id="gloss-total">0</strong></div>
+        <div class="tag">Translated: <strong id="gloss-translated">0</strong></div>
+        <div class="tag">Missing: <strong id="gloss-missing-count">0</strong></div>
+      </div>
+      <div id="gloss-missing-terms" style="margin-top:.5rem;"></div>
+      <div id="gloss-tsv-section" style="margin-top:1rem;display:none;">
+        <label>DeepL TSV</label>
+        <div class="output-area" id="gloss-tsv" style="max-height:200px;"></div>
       </div>
     </div>
   </div>
 
-  <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 16px">
-    <h2>Document Term Filter</h2>
-    <p style="font-size:12px; color:#666; margin-bottom:8px">Find which candidate terms are relevant to a specific document.</p>
-    <div class="row">
-      <div class="col">
-        <h2>Document Text</h2>
-        <textarea id="gloss-filter-doc" placeholder="Paste the document text here..." style="min-height:150px"></textarea>
-      </div>
-      <div class="col">
-        <h2>Candidate Terms (one per line)</h2>
-        <textarea id="gloss-filter-terms" placeholder="existential risk&#10;artificial intelligence&#10;machine learning" style="min-height:150px"></textarea>
+  <div class="card">
+    <div class="card-title">AI Generation <span class="badge">Gemini</span></div>
+    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Generate translations for missing glossary terms using AI.</p>
+    <div class="form-group">
+      <label>Glossary JSON</label>
+      <textarea id="gloss-ai-json" placeholder='Paste full glossary JSON...' style="min-height:100px;"></textarea>
+    </div>
+    <div class="form-row" style="margin-top:1rem;">
+      <div class="form-group narrow">
+        <label>Target Language</label>
+        <select id="gloss-ai-lang"></select>
       </div>
     </div>
-    <div class="controls">
-      <button class="primary" id="gloss-filter-run">Filter Relevant Terms</button>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="gloss-gen-btn">Generate Missing Translations</button>
+      <span class="status" id="gloss-gen-status"></span>
     </div>
-    <div id="gloss-filter-status"></div>
-    <div id="gloss-filter-results" style="display:none; margin-top:12px">
-      <h2>Relevant Terms</h2>
-      <div class="result-box" id="gloss-filter-output" style="min-height:80px"></div>
+    <div id="gloss-gen-result" style="display:none;margin-top:1rem;">
+      <div class="card-title" style="font-size:.9rem;">Generated Translations</div>
+      <div class="term-list" id="gloss-gen-terms"></div>
+      <div id="gloss-gen-unavailable" style="margin-top:.75rem;"></div>
+      <div style="margin-top:.75rem" class="btn-row">
+        <button class="btn btn-secondary" id="gloss-download-btn">Download Updated Glossary</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Document Filter <span class="badge">AI</span></div>
+    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Find which glossary terms are relevant to a specific document.</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Document Text</label>
+        <textarea id="gloss-doc-text" style="min-height:100px;" placeholder="Paste the document text..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Candidate Terms (one per line)</label>
+        <textarea id="gloss-doc-terms" style="min-height:100px;" placeholder="effective altruism&#10;existential risk&#10;..."></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="gloss-filter-btn">Filter Relevant Terms</button>
+      <span class="status" id="gloss-filter-status"></span>
+    </div>
+    <div id="gloss-filter-result" style="display:none;margin-top:1rem;">
+      <div class="card-title" style="font-size:.9rem;">Relevant Terms (<span id="gloss-filter-count">0</span>)</div>
+      <div class="term-list" id="gloss-filter-terms"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">DeepL Glossaries <span class="badge">API</span></div>
+    <div class="btn-row" style="margin-bottom:1rem;">
+      <button class="btn btn-secondary" id="gloss-deepl-list-btn">List Glossaries</button>
+      <span class="status" id="gloss-deepl-status"></span>
+    </div>
+    <div id="gloss-deepl-list"></div>
+    <div class="divider"></div>
+    <div class="card-title" style="font-size:.9rem;">Create New</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="gloss-deepl-name" placeholder="my-glossary">
+      </div>
+      <div class="form-group narrow">
+        <label>Source Lang</label>
+        <input type="text" id="gloss-deepl-src" value="en" style="width:60px;">
+      </div>
+      <div class="form-group narrow">
+        <label>Target Lang</label>
+        <select id="gloss-deepl-tgt"></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Entries (TSV: source\ttarget per line)</label>
+      <textarea id="gloss-deepl-tsv" style="min-height:80px;" placeholder="hello&#9;hola&#10;world&#9;mundo"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="gloss-deepl-create-btn">Create Glossary</button>
     </div>
   </div>
 </div>
 
-<!-- Import -->
-<div class="panel" id="import">
-  <h2>Import Article from URL</h2>
-  <div class="controls">
-    <input type="text" id="import-url" placeholder="https://..." style="flex:1; min-width:300px">
-    <button class="primary" id="import-run">Import</button>
+<!-- ===== BATCH ===== -->
+<div class="section" id="sec-batch">
+  <div class="section-header">
+    <h1>Batch Translation</h1>
+    <p>Translate all markdown files in a directory. Filters out existing translation files automatically.</p>
   </div>
-  <div id="import-status"></div>
-  <div id="import-result" style="display:none; margin-top:16px">
-    <div style="margin-bottom:12px">
-      <h2>Source Type</h2>
-      <div class="result-box" id="import-source" style="min-height:auto; padding:6px 10px"></div>
+
+  <div class="card">
+    <div class="card-title">Source Directory</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Directory Path</label>
+        <input type="text" id="batch-dir" placeholder="/path/to/markdown/files">
+      </div>
     </div>
-    <div style="margin-bottom:12px">
-      <h2>Title</h2>
-      <div class="result-box" id="import-title" style="min-height:auto; padding:6px 10px"></div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="batch-discover-btn">Discover Files</button>
+      <span class="status" id="batch-discover-status"></span>
     </div>
-    <div style="margin-bottom:12px">
-      <h2>Body (Markdown)</h2>
-      <textarea id="import-body" readonly style="min-height:300px; width:100%" rows="15"></textarea>
+    <div id="batch-file-list" style="display:none;margin-top:1rem;">
+      <label>Found Files</label>
+      <div class="output-area" id="batch-files" style="max-height:200px;"></div>
     </div>
-    <div class="controls">
-      <button class="primary" id="import-send">Send to Pipeline</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Batch Configuration</div>
+    <div class="form-row">
+      <div class="form-group narrow">
+        <label>Target Language</label>
+        <select id="batch-lang"></select>
+      </div>
+      <div class="form-group narrow">
+        <label>DeepL Model <span class="tip" data-tip="Quality mode is slower but more accurate. Fast mode uses less compute for quicker results.">?</span></label>
+        <select id="batch-model">
+          <option value="quality_optimized">Quality</option>
+          <option value="latency_optimized">Fast</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Output Directory (optional)</label>
+        <input type="text" id="batch-output" placeholder="Leave empty to use source dir">
+      </div>
     </div>
+    <div class="form-row">
+      <div class="checkbox-row"><input type="checkbox" id="batch-skip-rev"><label for="batch-skip-rev" style="text-transform:none;font-weight:400;">Skip AI revision <span class="tip" data-tip="Skips the 3-pass Gemini revision step. Faster but less polished output.">?</span></label></div>
+      <div class="checkbox-row"><input type="checkbox" id="batch-skip-fix"><label for="batch-skip-fix" style="text-transform:none;font-weight:400;">Skip auto-fix <span class="tip" data-tip="Skips typography fixes, thousands separators, and heading normalization.">?</span></label></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="batch-run-btn">Run Batch</button>
+      <span class="status" id="batch-run-status"></span>
+    </div>
+  </div>
+
+  <div class="card" id="batch-result-card" style="display:none;">
+    <div class="card-title">Results</div>
+    <table class="results-table" id="batch-results-table">
+      <thead><tr><th>File</th><th>Status</th><th>Output</th></tr></thead>
+      <tbody id="batch-results-body"></tbody>
+    </table>
   </div>
 </div>
 
-<!-- Batch -->
-<div class="panel" id="batch">
-  <h2>Batch Translation</h2>
-  <div class="controls">
-    <input type="text" id="batch-dir" placeholder="/path/to/source/directory" style="flex:1; min-width:300px">
-    <select id="batch-lang"></select>
-    <select id="batch-model">
-      <option value="quality_optimized">quality_optimized</option>
-      <option value="latency_optimized">latency_optimized</option>
-      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
-    </select>
-  </div>
-  <div class="controls">
-    <label><input type="checkbox" id="batch-skip-revision"> Skip Revision</label>
-    <label><input type="checkbox" id="batch-skip-autofix"> Skip Autofix</label>
-    <input type="text" id="batch-output-dir" placeholder="Output directory (optional)" style="flex:1; min-width:200px">
-  </div>
-  <div class="controls">
-    <button id="batch-discover">Discover Files</button>
-    <button class="primary" id="batch-run">Run Batch</button>
-  </div>
-  <div id="batch-status"></div>
-  <div id="batch-files" style="margin-top:12px"></div>
-  <div id="batch-results" style="margin-top:12px"></div>
-</div>
+</main>
+
+<footer>EA Translate &mdash; DeepL + Gemini translation pipeline. Based on <a href="https://github.com/tlon-team/tlon.el" style="color:var(--accent);text-decoration:none;">tlon.el</a></footer>
 
 <script>
-// --- Tabs ---
-document.querySelectorAll('.tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById(tab.dataset.panel).classList.add('active');
-  });
+const API = window.location.origin;
+const LANG_CODE_MAP = {arabic:'ar',chinese:'zh',french:'fr',italian:'it',japanese:'ja',korean:'ko',polish:'pl',russian:'ru',serbian:'sr',spanish:'es',turkish:'tr'};
+
+// --- Tab switching ---
+const nav = document.getElementById('nav');
+nav.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + btn.dataset.tab).classList.add('active');
 });
-
-// --- Helpers ---
-async function api(url, opts = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
-}
-
-function status(el, msg, type) {
-  el.innerHTML = `<div class="status ${type}">${type === 'loading' ? '<span class="spinner"></span>' : ''}${esc(msg)}</div>`;
-}
-
-function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function switchTab(tab) { nav.querySelector(`button[data-tab="${tab}"]`).click(); }
 
 // --- Init ---
 async function init() {
-  const healthEl = document.getElementById('health');
   try {
-    const h = await api('/api/health');
-    if (h.ok) {
-      healthEl.innerHTML = `<span class="dot green"></span>Keys loaded`;
-    } else {
-      healthEl.innerHTML = `<span class="dot red"></span>${esc(h.error)}`;
-    }
-  } catch (e) {
-    healthEl.innerHTML = `<span class="dot red"></span>Server error`;
-  }
+    const res = await fetch(API + '/api/languages');
+    const data = await res.json();
+    const targets = data.languages;
+    const langSelects = ['pipe-lang','tl-lang','rev-lang','gloss-lang','gloss-ai-lang','gloss-deepl-tgt','batch-lang'];
+    langSelects.forEach(id => {
+      const sel = document.getElementById(id);
+      targets.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l; opt.textContent = l.charAt(0).toUpperCase() + l.slice(1);
+        sel.appendChild(opt);
+      });
+      const es = Array.from(sel.options).find(o => o.value === 'spanish');
+      if (es) es.selected = true;
+    });
+    const codes = ['ar','zh','en','fr','it','ja','ko','pl','ru','sr','es','tr'];
+    const fixSel = document.getElementById('fix-lang-code');
+    codes.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      fixSel.appendChild(opt);
+    });
+    const esCode = Array.from(fixSel.options).find(o => o.value === 'es');
+    if (esCode) esCode.selected = true;
+  } catch(e) { console.error('Init error:', e); }
 
   try {
-    const { languages } = await api('/api/languages');
-    for (const sel of ['pipe-lang', 'deepl-lang', 'batch-lang', 'gloss-ai-lang']) {
-      const el = document.getElementById(sel);
-      languages.forEach(l => {
-        const opt = document.createElement('option');
-        opt.value = l; opt.textContent = l;
-        if (l === 'spanish') opt.selected = true;
-        el.appendChild(opt);
-      });
-    }
-  } catch (e) { console.error(e); }
+    const res = await fetch(API + '/api/health');
+    const data = await res.json();
+    const dot = document.getElementById('healthDot');
+    dot.classList.toggle('ok', data.ok && data.hasDeepL && data.hasGoogle);
+    dot.classList.toggle('error', !data.ok);
+    dot.title = data.ok ? `DeepL: ${data.hasDeepL?'OK':'missing'}, Gemini: ${data.hasGoogle?'OK':'missing'}` : 'API error';
+  } catch(e) { document.getElementById('healthDot').classList.add('error'); }
 }
 init();
 
-// --- Full Pipeline ---
-document.getElementById('pipe-run').addEventListener('click', async () => {
-  const btn = document.getElementById('pipe-run');
-  const statusEl = document.getElementById('pipe-status');
-  const stagesEl = document.getElementById('pipe-stages');
-  const outputEl = document.getElementById('pipe-output');
-
-  btn.disabled = true;
-  outputEl.textContent = '';
-  stagesEl.innerHTML = '';
-  status(statusEl, 'Running pipeline...', 'loading');
-
-  try {
-    const data = await api('/api/pipeline', {
-      method: 'POST',
-      body: {
-        text: document.getElementById('pipe-input').value,
-        targetLanguage: document.getElementById('pipe-lang').value,
-        modelType: document.getElementById('pipe-model').value,
-        skipRevision: document.getElementById('pipe-skip-revision').checked,
-        skipAutofix: document.getElementById('pipe-skip-autofix').checked,
-        chunkSize: parseInt(document.getElementById('pipe-chunk').value) || 10,
-        maxParallel: parseInt(document.getElementById('pipe-parallel').value) || 3,
-      },
-    });
-
-    outputEl.textContent = data.final;
-    stagesEl.innerHTML = data.stages.map((s, i) => `
-      <div class="stage">
-        <div class="stage-header" onclick="this.nextElementSibling.classList.toggle('open')">
-          <span>${esc(s.name)}</span>
-          <span class="time">${(s.durationMs / 1000).toFixed(1)}s</span>
-        </div>
-        <div class="stage-body">${esc(s.output)}</div>
-      </div>
-    `).join('');
-
-    const totalMs = data.stages.reduce((sum, s) => sum + s.durationMs, 0);
-    status(statusEl, `Done in ${(totalMs / 1000).toFixed(1)}s (${data.stages.length} stages)`, 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// --- DeepL Only ---
-document.getElementById('deepl-run').addEventListener('click', async () => {
-  const btn = document.getElementById('deepl-run');
-  const statusEl = document.getElementById('deepl-status');
-  btn.disabled = true;
-  document.getElementById('deepl-output').textContent = '';
-  status(statusEl, 'Translating...', 'loading');
-
-  try {
-    const data = await api('/api/translate/deepl', {
-      method: 'POST',
-      body: {
-        text: document.getElementById('deepl-input').value,
-        targetLanguage: document.getElementById('deepl-lang').value,
-        modelType: document.getElementById('deepl-model').value,
-      },
-    });
-    document.getElementById('deepl-output').textContent = data.result;
-    status(statusEl, 'Done', 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
-});
-
-// --- Auto-Fix ---
-document.getElementById('fix-run').addEventListener('click', async () => {
-  const statusEl = document.getElementById('fix-status');
-  try {
-    const data = await api('/api/fix/autofix', {
-      method: 'POST',
-      body: {
-        text: document.getElementById('fix-input').value,
-        langCode: document.getElementById('fix-lang').value,
-      },
-    });
-    document.getElementById('fix-output').textContent = data.result;
-    status(statusEl, 'Fixes applied', 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  }
-});
-
-document.getElementById('fix-lang-only').addEventListener('click', async () => {
-  const statusEl = document.getElementById('fix-status');
-  try {
-    const data = await api('/api/fix/language', {
-      method: 'POST',
-      body: {
-        text: document.getElementById('fix-input').value,
-        langCode: document.getElementById('fix-lang').value,
-      },
-    });
-    document.getElementById('fix-output').textContent = data.result;
-    status(statusEl, 'Language rules applied', 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  }
-});
-
-// --- Structural Checks ---
-document.getElementById('checks-run').addEventListener('click', async () => {
-  const resultsEl = document.getElementById('checks-results');
-  try {
-    const data = await api('/api/fix/check', {
-      method: 'POST',
-      body: { text: document.getElementById('checks-input').value },
-    });
-
-    let html = '<h2>Heading Hierarchy</h2>';
-    if (data.headingErrors.length === 0) {
-      html += '<p class="ok-msg">No heading hierarchy issues found.</p>';
-    } else {
-      html += '<ul class="error-list">' + data.headingErrors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
-    }
-
-    html += '<h2 style="margin-top:12px">Balanced Characters</h2>';
-    if (data.balanceErrors.length === 0) {
-      html += '<p class="ok-msg">All characters balanced.</p>';
-    } else {
-      html += '<ul class="error-list">' + data.balanceErrors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
-    }
-
-    resultsEl.innerHTML = html;
-  } catch (e) {
-    resultsEl.innerHTML = `<div class="status error">${esc(e.message)}</div>`;
-  }
-});
-
-// --- YAML ---
-let lastParsedMeta = null;
-
-document.getElementById('yaml-parse').addEventListener('click', async () => {
-  const statusEl = document.getElementById('yaml-status');
-  try {
-    const data = await api('/api/yaml/parse', {
-      method: 'POST',
-      body: { document: document.getElementById('yaml-input').value },
-    });
-    lastParsedMeta = data.frontmatter;
-    let output = '';
-    if (data.frontmatter) {
-      output += 'FRONTMATTER:\n' + JSON.stringify(data.frontmatter, null, 2) + '\n\n';
-    } else {
-      output += 'No frontmatter found.\n\n';
-    }
-    output += 'BODY:\n' + data.body;
-    document.getElementById('yaml-output').textContent = output;
-    status(statusEl, 'Parsed', 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  }
-});
-
-document.getElementById('yaml-validate').addEventListener('click', async () => {
-  const statusEl = document.getElementById('yaml-status');
-  if (!lastParsedMeta) {
-    status(statusEl, 'Parse the document first', 'error');
-    return;
-  }
-  try {
-    const data = await api('/api/yaml/validate', {
-      method: 'POST',
-      body: {
-        meta: lastParsedMeta,
-        type: document.getElementById('yaml-type').value,
-      },
-    });
-    if (data.valid) {
-      status(statusEl, 'Valid! No issues found.', 'ok');
-    } else {
-      statusEl.innerHTML = '<ul class="error-list">' + data.errors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
-    }
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  }
-});
-
-// --- Glossary ---
-document.getElementById('gloss-parse').addEventListener('click', async () => {
-  const outputEl = document.getElementById('gloss-output');
-  try {
-    const data = await api('/api/glossary/parse', {
-      method: 'POST',
-      body: {
-        json: document.getElementById('gloss-input').value,
-        langCode: document.getElementById('gloss-lang').value,
-      },
-    });
-    let html = `Total entries: ${data.totalEntries} | With translation: ${data.termsWithTranslation} | Missing: ${data.termsMissing}`;
-    if (data.missingTerms.length > 0) {
-      html += '\n\nMissing terms:\n' + data.missingTerms.join('\n');
-    }
-    if (data.deeplTsv) {
-      html += '\n\nDeepL TSV:\n' + data.deeplTsv;
-    }
-    outputEl.textContent = html;
-  } catch (e) {
-    outputEl.textContent = 'Error: ' + e.message;
-  }
-});
-
-document.getElementById('gloss-deepl-list').addEventListener('click', async () => {
-  const outputEl = document.getElementById('gloss-deepl-output');
-  outputEl.innerHTML = '<div class="status loading"><span class="spinner"></span>Loading...</div>';
-  try {
-    const data = await api('/api/glossary/deepl');
-    if (data.glossaries.length === 0) {
-      outputEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No glossaries found.</p>';
-      return;
-    }
-    outputEl.innerHTML = `
-      <table class="glossary-table">
-        <thead><tr><th>Name</th><th>Source</th><th>Target</th><th>Entries</th><th></th></tr></thead>
-        <tbody>
-          ${data.glossaries.map(g => `
-            <tr>
-              <td>${esc(g.name)}</td>
-              <td>${esc(g.source_lang)}</td>
-              <td>${esc(g.target_lang)}</td>
-              <td>${g.entry_count}</td>
-              <td><button class="danger" onclick="deleteGlossary('${g.glossary_id}')">Delete</button></td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-  } catch (e) {
-    outputEl.innerHTML = `<div class="status error">${esc(e.message)}</div>`;
-  }
-});
-
-async function deleteGlossary(id) {
-  if (!confirm('Delete this glossary?')) return;
-  try {
-    await api(`/api/glossary/deepl/${id}`, { method: 'DELETE' });
-    document.getElementById('gloss-deepl-list').click();
-  } catch (e) {
-    alert(e.message);
-  }
+// --- Helpers ---
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'status' + (type ? ' ' + type : '');
+  el.innerHTML = type === 'loading' ? '<div class="spinner"></div> ' + msg : msg;
+}
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function apiPost(path, body) {
+  const res = await fetch(API + path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
 }
 
-// --- Import ---
-document.getElementById('import-run').addEventListener('click', async () => {
-  const btn = document.getElementById('import-run');
-  const statusEl = document.getElementById('import-status');
-  const resultEl = document.getElementById('import-result');
+// --- PIPELINE ---
+document.getElementById('pipe-import-btn').addEventListener('click', async () => {
+  const url = document.getElementById('pipe-url').value.trim();
+  if (!url) return;
+  setStatus('pipe-status', 'Importing...', 'loading');
+  try {
+    const data = await apiPost('/api/import', { url });
+    document.getElementById('pipe-source').value = data.body;
+    setStatus('pipe-status', `Imported from ${data.source}`, 'success');
+  } catch(e) { setStatus('pipe-status', e.message, 'error'); }
+});
 
-  btn.disabled = true;
-  resultEl.style.display = 'none';
-  status(statusEl, 'Fetching and extracting...', 'loading');
+document.getElementById('pipe-run-btn').addEventListener('click', async () => {
+  const text = document.getElementById('pipe-source').value.trim();
+  if (!text) return;
+  const lang = document.getElementById('pipe-lang').value;
+  const model = document.getElementById('pipe-model').value;
+  const skipRev = document.getElementById('pipe-skip-rev').checked;
+  const skipFix = document.getElementById('pipe-skip-fix').checked;
+
+  const stagesCard = document.getElementById('pipe-stages-card');
+  stagesCard.style.display = '';
+  const stagesEl = document.getElementById('pipe-stages');
+  const stageNames = ['DeepL Translation'];
+  if (!skipRev) stageNames.push('AI Revision (3 passes)');
+  if (!skipFix) stageNames.push('Auto-fixes');
+  stagesEl.innerHTML = stageNames.map((s,i) =>
+    `<div class="stage ${i===0?'running':''}" id="pipe-stage-${i}"><div class="stage-dot"></div><span class="stage-name">${s}</span><span class="stage-time"></span></div>`
+  ).join('');
+
+  document.getElementById('pipe-result-card').style.display = 'none';
+  setStatus('pipe-status', 'Running pipeline...', 'loading');
+  document.getElementById('pipe-run-btn').disabled = true;
 
   try {
-    const data = await api('/api/import', {
-      method: 'POST',
-      body: { url: document.getElementById('import-url').value },
+    const data = await apiPost('/api/pipeline', {
+      text, targetLanguage: lang, modelType: model,
+      skipRevision: skipRev, skipAutofix: skipFix
     });
-
-    document.getElementById('import-source').textContent = data.source ?? '(unknown)';
-    document.getElementById('import-title').textContent = data.title ?? '(no title)';
-    document.getElementById('import-body').value = data.body ?? '';
-    resultEl.style.display = 'block';
-    status(statusEl, 'Import successful', 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+    data.stages.forEach((s, i) => {
+      const el = document.getElementById('pipe-stage-' + i);
+      if (el) {
+        el.className = 'stage done';
+        el.querySelector('.stage-time').textContent = (s.durationMs / 1000).toFixed(1) + 's';
+      }
+    });
+    document.getElementById('pipe-output').textContent = data.final;
+    document.getElementById('pipe-result-card').style.display = '';
+    const totalMs = data.stages.reduce((a,s) => a + s.durationMs, 0);
+    setStatus('pipe-status', `Done in ${(totalMs/1000).toFixed(1)}s`, 'success');
+  } catch(e) { setStatus('pipe-status', e.message, 'error'); }
+  document.getElementById('pipe-run-btn').disabled = false;
 });
 
-document.getElementById('import-send').addEventListener('click', () => {
-  const body = document.getElementById('import-body').value;
-  document.getElementById('pipe-input').value = body;
-  // Switch to the Full Pipeline tab
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelector('[data-panel="pipeline"]').classList.add('active');
-  document.getElementById('pipeline').classList.add('active');
+document.getElementById('pipe-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('pipe-output').textContent);
 });
 
-// --- AI Glossary Generation ---
-let lastUpdatedGlossary = null;
-
-document.getElementById('gloss-ai-generate').addEventListener('click', async () => {
-  const btn = document.getElementById('gloss-ai-generate');
-  const statusEl = document.getElementById('gloss-ai-status');
-  const resultsEl = document.getElementById('gloss-ai-results');
-
-  const glossaryJson = document.getElementById('gloss-input').value.trim();
-  if (!glossaryJson) {
-    status(statusEl, 'Paste glossary JSON in the "Local Glossary (JSON)" textarea above', 'error');
-    return;
-  }
-
-  const langValue = document.getElementById('gloss-ai-lang').value;
-  // Map language name to code - get first two chars as heuristic, but use a lookup
-  const langCodeMap = { spanish: 'es', french: 'fr', italian: 'it', german: 'de', portuguese: 'pt', chinese: 'zh', japanese: 'ja', korean: 'ko', arabic: 'ar' };
-  const langCode = langCodeMap[langValue] || langValue.slice(0, 2);
-  const langName = langValue.charAt(0).toUpperCase() + langValue.slice(1);
-
-  btn.disabled = true;
-  resultsEl.style.display = 'none';
-  lastUpdatedGlossary = null;
-  status(statusEl, 'Generating missing translations...', 'loading');
-
+// --- IMPORT ---
+document.getElementById('import-btn').addEventListener('click', async () => {
+  const url = document.getElementById('import-url').value.trim();
+  if (!url) return;
+  setStatus('import-status', 'Fetching...', 'loading');
   try {
-    const data = await api('/api/glossary/generate', {
-      method: 'POST',
-      body: { glossaryJson, langCode, langName },
-    });
-
-    lastUpdatedGlossary = data.updatedGlossary;
-
-    const generatedEl = document.getElementById('gloss-ai-generated');
-    if (data.generated.length === 0) {
-      generatedEl.textContent = 'No new translations generated.';
-    } else {
-      generatedEl.textContent = data.generated.map(g => `${g.en} → ${g.translation}`).join('\n');
-    }
-
-    const unavailWrap = document.getElementById('gloss-ai-unavailable-wrap');
-    const unavailEl = document.getElementById('gloss-ai-unavailable');
-    if (data.unavailable && data.unavailable.length > 0) {
-      unavailEl.textContent = data.unavailable.join('\n');
-      unavailWrap.style.display = 'block';
-    } else {
-      unavailWrap.style.display = 'none';
-    }
-
-    resultsEl.style.display = 'block';
-    status(statusEl, `Done: ${data.generated.length} generated, ${(data.unavailable || []).length} unavailable`, 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+    const data = await apiPost('/api/import', { url });
+    document.getElementById('import-title').value = data.title;
+    document.getElementById('import-body').textContent = data.body;
+    document.getElementById('import-source-badge').textContent = data.source;
+    document.getElementById('import-result-card').style.display = '';
+    setStatus('import-status', '', '');
+  } catch(e) { setStatus('import-status', e.message, 'error'); }
 });
 
-document.getElementById('gloss-ai-download').addEventListener('click', () => {
-  if (!lastUpdatedGlossary) return;
-  const blob = new Blob([JSON.stringify(lastUpdatedGlossary, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'glossary-updated.json';
-  a.click();
-  URL.revokeObjectURL(url);
+document.getElementById('import-to-pipeline-btn').addEventListener('click', () => {
+  document.getElementById('pipe-source').value = document.getElementById('import-body').textContent;
+  switchTab('pipeline');
 });
 
-// --- Document Term Filter ---
-document.getElementById('gloss-filter-run').addEventListener('click', async () => {
-  const btn = document.getElementById('gloss-filter-run');
-  const statusEl = document.getElementById('gloss-filter-status');
-  const resultsEl = document.getElementById('gloss-filter-results');
+document.getElementById('import-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('import-body').textContent);
+});
 
-  btn.disabled = true;
-  resultsEl.style.display = 'none';
-  status(statusEl, 'Filtering relevant terms...', 'loading');
-
+// --- TRANSLATE ---
+document.getElementById('tl-btn').addEventListener('click', async () => {
+  const text = document.getElementById('tl-source').value.trim();
+  if (!text) return;
+  setStatus('tl-status', 'Translating...', 'loading');
   try {
-    const documentText = document.getElementById('gloss-filter-doc').value;
-    const termsRaw = document.getElementById('gloss-filter-terms').value;
-    const candidateTerms = termsRaw.split('\n').map(t => t.trim()).filter(Boolean);
-
-    const data = await api('/api/glossary/filter', {
-      method: 'POST',
-      body: { documentText, candidateTerms },
+    const data = await apiPost('/api/translate/deepl', {
+      text, targetLanguage: document.getElementById('tl-lang').value,
+      modelType: document.getElementById('tl-model').value
     });
-
-    const outputEl = document.getElementById('gloss-filter-output');
-    if (data.relevantTerms.length === 0) {
-      outputEl.textContent = 'No relevant terms found.';
-    } else {
-      outputEl.textContent = data.relevantTerms.join('\n');
-    }
-    resultsEl.style.display = 'block';
-    status(statusEl, `Found ${data.count} relevant term(s)`, 'ok');
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+    document.getElementById('tl-output').textContent = data.result;
+    setStatus('tl-status', '', '');
+  } catch(e) { setStatus('tl-status', e.message, 'error'); }
 });
 
-// --- Batch ---
-document.getElementById('batch-discover').addEventListener('click', async () => {
-  const statusEl = document.getElementById('batch-status');
-  const filesEl = document.getElementById('batch-files');
-  filesEl.innerHTML = '';
-  status(statusEl, 'Discovering files...', 'loading');
-
-  try {
-    const data = await api('/api/batch/discover', {
-      method: 'POST',
-      body: { directory: document.getElementById('batch-dir').value },
-    });
-    status(statusEl, `Found ${data.count} file(s)`, 'ok');
-    if (data.files.length === 0) {
-      filesEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No source files found in that directory.</p>';
-    } else {
-      filesEl.innerHTML = `
-        <h2>Discovered Files (${data.count})</h2>
-        <div class="result-box" style="margin-top:8px">${data.files.map(f => esc(f)).join('\n')}</div>
-      `;
-    }
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  }
+document.getElementById('tl-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('tl-output').textContent);
 });
 
-document.getElementById('batch-run').addEventListener('click', async () => {
-  const btn = document.getElementById('batch-run');
-  const statusEl = document.getElementById('batch-status');
-  const resultsEl = document.getElementById('batch-results');
+document.getElementById('tl-to-revise-btn').addEventListener('click', () => {
+  document.getElementById('rev-source').value = document.getElementById('tl-source').value;
+  document.getElementById('rev-translated').value = document.getElementById('tl-output').textContent;
+  document.getElementById('rev-lang').value = document.getElementById('tl-lang').value;
+  switchTab('revise');
+});
 
-  btn.disabled = true;
-  resultsEl.innerHTML = '';
-  status(statusEl, 'Running batch translation...', 'loading');
-
+// --- REVISE ---
+document.getElementById('rev-btn').addEventListener('click', async () => {
+  const src = document.getElementById('rev-source').value.trim();
+  const tl = document.getElementById('rev-translated').value.trim();
+  if (!src || !tl) return;
+  setStatus('rev-status', 'Running 3-pass revision (this may take a minute)...', 'loading');
+  document.getElementById('rev-btn').disabled = true;
   try {
-    const data = await api('/api/batch/run', {
-      method: 'POST',
-      body: {
-        directory: document.getElementById('batch-dir').value,
-        targetLanguage: document.getElementById('batch-lang').value,
-        modelType: document.getElementById('batch-model').value,
-        skipRevision: document.getElementById('batch-skip-revision').checked,
-        skipAutofix: document.getElementById('batch-skip-autofix').checked,
-        outputDir: document.getElementById('batch-output-dir').value || undefined,
-      },
+    const data = await apiPost('/api/translate/revise', {
+      sourceText: src, translatedText: tl,
+      targetLanguage: document.getElementById('rev-lang').value,
+      chunkSize: parseInt(document.getElementById('rev-chunk').value),
+      maxParallel: parseInt(document.getElementById('rev-parallel').value)
     });
+    document.getElementById('rev-output').textContent = data.result;
+    document.getElementById('rev-result-card').style.display = '';
+    setStatus('rev-status', 'Done', 'success');
+  } catch(e) { setStatus('rev-status', e.message, 'error'); }
+  document.getElementById('rev-btn').disabled = false;
+});
 
-    const results = data.results ?? [];
-    const completed = results.filter(r => r.status === 'done').length;
-    const errors = results.filter(r => r.status === 'error').length;
+document.getElementById('rev-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('rev-output').textContent);
+});
 
-    status(statusEl, `Batch complete: ${completed} done, ${errors} error(s)`, errors > 0 ? 'error' : 'ok');
+// --- FIX ---
+document.getElementById('fix-all-btn').addEventListener('click', async () => {
+  const text = document.getElementById('fix-input').value.trim();
+  if (!text) return;
+  setStatus('fix-status', 'Fixing...', 'loading');
+  try {
+    const data = await apiPost('/api/fix/autofix', { text, langCode: document.getElementById('fix-lang-code').value });
+    document.getElementById('fix-output').textContent = data.result;
+    setStatus('fix-status', '', '');
+  } catch(e) { setStatus('fix-status', e.message, 'error'); }
+});
 
-    if (results.length > 0) {
-      resultsEl.innerHTML = `
-        <h2>Results</h2>
-        <table class="glossary-table" style="margin-top:8px">
-          <thead><tr><th>File</th><th>Status</th><th>Output</th><th>Error</th></tr></thead>
-          <tbody>
-            ${results.map(r => `
-              <tr>
-                <td>${esc(r.file ?? '')}</td>
-                <td style="color:${r.status === 'done' ? '#6d6' : '#d66'}">${esc(r.status ?? '')}</td>
-                <td>${esc(r.outputPath ?? '')}</td>
-                <td>${esc(r.error ?? '')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <p style="margin-top:8px; font-size:13px; color:#aaa">${completed} completed, ${errors} error(s)</p>
-      `;
+document.getElementById('fix-lang-btn').addEventListener('click', async () => {
+  const text = document.getElementById('fix-input').value.trim();
+  if (!text) return;
+  setStatus('fix-status', 'Applying language fixes...', 'loading');
+  try {
+    const data = await apiPost('/api/fix/language', { text, langCode: document.getElementById('fix-lang-code').value });
+    document.getElementById('fix-output').textContent = data.result;
+    setStatus('fix-status', '', '');
+  } catch(e) { setStatus('fix-status', e.message, 'error'); }
+});
+
+document.getElementById('fix-check-btn').addEventListener('click', async () => {
+  const text = document.getElementById('fix-input').value.trim();
+  if (!text) return;
+  setStatus('fix-status', 'Checking...', 'loading');
+  try {
+    const data = await apiPost('/api/fix/check', { text });
+    const checksEl = document.getElementById('fix-checks');
+    const content = document.getElementById('fix-checks-content');
+    checksEl.style.display = '';
+    const allErrors = [...(data.headingErrors||[]), ...(data.balanceErrors||[])];
+    if (allErrors.length === 0) {
+      content.innerHTML = '<span class="status success">All checks passed</span>';
     } else {
-      resultsEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No results returned.</p>';
+      content.innerHTML = allErrors.map(e => `<div class="status error" style="margin-bottom:.25rem;">${escHtml(e)}</div>`).join('');
     }
-  } catch (e) {
-    status(statusEl, e.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+    setStatus('fix-status', '', '');
+  } catch(e) { setStatus('fix-status', e.message, 'error'); }
+});
+
+document.getElementById('fix-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('fix-output').textContent);
+});
+
+// --- GLOSSARY ---
+document.getElementById('gloss-parse-btn').addEventListener('click', async () => {
+  const json = document.getElementById('gloss-json').value.trim();
+  if (!json) return;
+  const langCode = LANG_CODE_MAP[document.getElementById('gloss-lang').value] || 'es';
+  setStatus('gloss-parse-status', 'Parsing...', 'loading');
+  try {
+    const data = await apiPost('/api/glossary/parse', { json, langCode });
+    document.getElementById('gloss-total').textContent = data.totalEntries;
+    document.getElementById('gloss-translated').textContent = data.termsWithTranslation;
+    document.getElementById('gloss-missing-count').textContent = data.termsMissing;
+    document.getElementById('gloss-parse-result').style.display = '';
+    const missingEl = document.getElementById('gloss-missing-terms');
+    if (data.missingTerms.length > 0) {
+      missingEl.innerHTML = '<label>Missing Terms</label><div class="term-list">' +
+        data.missingTerms.map(t => `<span class="term-item">${escHtml(t)}</span>`).join('') + '</div>';
+    } else { missingEl.innerHTML = ''; }
+    if (data.deeplTsv) {
+      document.getElementById('gloss-tsv').textContent = data.deeplTsv;
+      document.getElementById('gloss-tsv-section').style.display = '';
+    }
+    setStatus('gloss-parse-status', '', '');
+  } catch(e) { setStatus('gloss-parse-status', e.message, 'error'); }
+});
+
+let updatedGlossary = null;
+document.getElementById('gloss-gen-btn').addEventListener('click', async () => {
+  const json = document.getElementById('gloss-ai-json').value.trim();
+  const langName = document.getElementById('gloss-ai-lang').value;
+  const langCode = LANG_CODE_MAP[langName] || langName;
+  if (!json) return;
+  setStatus('gloss-gen-status', 'Generating translations with AI...', 'loading');
+  document.getElementById('gloss-gen-btn').disabled = true;
+  try {
+    const data = await apiPost('/api/glossary/generate', { glossaryJson: json, langCode, langName });
+    updatedGlossary = data.updatedGlossary;
+    document.getElementById('gloss-gen-terms').innerHTML = data.generated.map(g =>
+      `<span class="term-item">${escHtml(g.en)} &rarr; ${escHtml(g.translation)}</span>`
+    ).join('');
+    const unavEl = document.getElementById('gloss-gen-unavailable');
+    if (data.unavailable.length > 0) {
+      unavEl.innerHTML = '<label style="color:var(--error);">Unavailable (' + data.unavailable.length + ')</label><div class="term-list">' +
+        data.unavailable.map(t => `<span class="term-item" style="border-color:var(--error);background:var(--error-bg);color:var(--error);">${escHtml(t)}</span>`).join('') + '</div>';
+    } else { unavEl.innerHTML = ''; }
+    document.getElementById('gloss-gen-result').style.display = '';
+    setStatus('gloss-gen-status', `Generated ${data.generated.length} translations`, 'success');
+  } catch(e) { setStatus('gloss-gen-status', e.message, 'error'); }
+  document.getElementById('gloss-gen-btn').disabled = false;
+});
+
+document.getElementById('gloss-download-btn').addEventListener('click', () => {
+  if (!updatedGlossary) return;
+  const blob = new Blob([JSON.stringify(updatedGlossary, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'glossary-updated.json'; a.click();
+});
+
+document.getElementById('gloss-filter-btn').addEventListener('click', async () => {
+  const doc = document.getElementById('gloss-doc-text').value.trim();
+  const terms = document.getElementById('gloss-doc-terms').value.trim();
+  if (!doc || !terms) return;
+  setStatus('gloss-filter-status', 'Filtering...', 'loading');
+  try {
+    const data = await apiPost('/api/glossary/filter', {
+      documentText: doc, candidateTerms: terms.split('\n').filter(t => t.trim())
+    });
+    document.getElementById('gloss-filter-count').textContent = data.count;
+    document.getElementById('gloss-filter-terms').innerHTML =
+      data.relevantTerms.map(t => `<span class="term-item">${escHtml(t)}</span>`).join('');
+    document.getElementById('gloss-filter-result').style.display = '';
+    setStatus('gloss-filter-status', '', '');
+  } catch(e) { setStatus('gloss-filter-status', e.message, 'error'); }
+});
+
+document.getElementById('gloss-deepl-list-btn').addEventListener('click', async () => {
+  setStatus('gloss-deepl-status', 'Loading...', 'loading');
+  try {
+    const res = await fetch(API + '/api/glossary/deepl');
+    const data = await res.json();
+    const list = document.getElementById('gloss-deepl-list');
+    if (!data.glossaries || data.glossaries.length === 0) {
+      list.innerHTML = '<span class="status">No glossaries found</span>';
+    } else {
+      list.innerHTML = '<table class="results-table"><thead><tr><th>Name</th><th>Languages</th><th>Entries</th><th></th></tr></thead><tbody>' +
+        data.glossaries.map(g => `<tr>
+          <td style="font-family:var(--font-sans);">${escHtml(g.name)}</td>
+          <td>${g.source_lang} &rarr; ${g.target_lang}</td>
+          <td>${g.entry_count}</td>
+          <td><button class="btn btn-ghost" onclick="deleteGlossary('${g.glossary_id}')">Delete</button></td>
+        </tr>`).join('') + '</tbody></table>';
+    }
+    setStatus('gloss-deepl-status', '', '');
+  } catch(e) { setStatus('gloss-deepl-status', e.message, 'error'); }
+});
+
+window.deleteGlossary = async (id) => {
+  if (!confirm('Delete this glossary?')) return;
+  try {
+    await fetch(API + '/api/glossary/deepl/' + id, { method: 'DELETE' });
+    document.getElementById('gloss-deepl-list-btn').click();
+  } catch(e) { alert(e.message); }
+};
+
+document.getElementById('gloss-deepl-create-btn').addEventListener('click', async () => {
+  const name = document.getElementById('gloss-deepl-name').value.trim();
+  const src = document.getElementById('gloss-deepl-src').value.trim();
+  const tgt = document.getElementById('gloss-deepl-tgt').value;
+  const tsv = document.getElementById('gloss-deepl-tsv').value.trim();
+  if (!name || !tsv) return;
+  setStatus('gloss-deepl-status', 'Creating...', 'loading');
+  try {
+    await apiPost('/api/glossary/deepl', { name, sourceLang: src, targetLang: LANG_CODE_MAP[tgt]||tgt, entriesTsv: tsv });
+    setStatus('gloss-deepl-status', 'Created', 'success');
+    document.getElementById('gloss-deepl-list-btn').click();
+  } catch(e) { setStatus('gloss-deepl-status', e.message, 'error'); }
+});
+
+// --- BATCH ---
+document.getElementById('batch-discover-btn').addEventListener('click', async () => {
+  const dir = document.getElementById('batch-dir').value.trim();
+  if (!dir) return;
+  setStatus('batch-discover-status', 'Scanning...', 'loading');
+  try {
+    const data = await apiPost('/api/batch/discover', { directory: dir });
+    document.getElementById('batch-files').textContent = data.files.join('\n');
+    document.getElementById('batch-file-list').style.display = '';
+    setStatus('batch-discover-status', `${data.count} files found`, 'success');
+  } catch(e) { setStatus('batch-discover-status', e.message, 'error'); }
+});
+
+document.getElementById('batch-run-btn').addEventListener('click', async () => {
+  const dir = document.getElementById('batch-dir').value.trim();
+  const lang = document.getElementById('batch-lang').value;
+  if (!dir || !lang) return;
+  setStatus('batch-run-status', 'Running batch translation (this may take a while)...', 'loading');
+  document.getElementById('batch-run-btn').disabled = true;
+  try {
+    const data = await apiPost('/api/batch/run', {
+      directory: dir, targetLanguage: lang,
+      outputDir: document.getElementById('batch-output').value.trim() || undefined,
+      modelType: document.getElementById('batch-model').value,
+      skipRevision: document.getElementById('batch-skip-rev').checked,
+      skipAutofix: document.getElementById('batch-skip-fix').checked
+    });
+    const body = document.getElementById('batch-results-body');
+    body.innerHTML = data.results.map(r => {
+      const file = r.file.split('/').pop();
+      const out = r.outputFile ? r.outputFile.split('/').pop() : '-';
+      const cls = r.status === 'done' ? 'status-done' : r.status === 'error' ? 'status-error' : 'status-pending';
+      return `<tr><td>${escHtml(file)}</td><td class="${cls}">${r.status}</td><td>${escHtml(out)}</td></tr>`;
+    }).join('');
+    document.getElementById('batch-result-card').style.display = '';
+    setStatus('batch-run-status', `${data.completed}/${data.total} completed`, 'success');
+  } catch(e) { setStatus('batch-run-status', e.message, 'error'); }
+  document.getElementById('batch-run-btn').disabled = false;
 });
 </script>
 </body>

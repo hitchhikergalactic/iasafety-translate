@@ -9,9 +9,9 @@ vi.mock("fs/promises", () => ({
 describe("loadKeys", () => {
   afterEach(() => { _resetKeysCache(); vi.restoreAllMocks(); });
 
-  it("parses keys from JSON file", async () => {
+  it("parses keys from .env file", async () => {
     vi.mocked(readFile).mockResolvedValue(
-      JSON.stringify({ deepl: "dk_test", google: "gk_test" })
+      "DEEPL_API_KEY=dk_test\nGEMINI_API_KEY=gk_test"
     );
     const keys = await loadKeys();
     expect(keys.deepl).toBe("dk_test");
@@ -22,7 +22,7 @@ describe("loadKeys", () => {
     vi.mocked(readFile).mockRejectedValue(
       Object.assign(new Error("ENOENT"), { code: "ENOENT" })
     );
-    await expect(loadKeys()).rejects.toThrow("~/.config/tlon/keys.json");
+    await expect(loadKeys()).rejects.toThrow("Credentials file not found");
   });
 });
 
@@ -31,14 +31,14 @@ describe("getKey", () => {
 
   it("returns key after loading", async () => {
     vi.mocked(readFile).mockResolvedValue(
-      JSON.stringify({ deepl: "dk_abc" })
+      "DEEPL_API_KEY=dk_abc\nGEMINI_API_KEY=gk_xyz"
     );
     const key = await getKey("deepl");
     expect(key).toBe("dk_abc");
   });
 
-  it("throws for unknown key name", async () => {
-    vi.mocked(readFile).mockResolvedValue(JSON.stringify({ deepl: "x" }));
-    await expect(getKey("nonexistent" as any)).rejects.toThrow("nonexistent");
+  it("throws for missing key", async () => {
+    vi.mocked(readFile).mockResolvedValue("DEEPL_API_KEY=x");
+    await expect(getKey("google")).rejects.toThrow("google");
   });
 });

@@ -25,7 +25,7 @@ describe("translateText", () => {
     expect(url).toBe("https://api.deepl.com/v2/translate");
     expect(opts.method).toBe("POST");
     const body = JSON.parse(opts.body);
-    expect(body.text).toBe("Hello world");
+    expect(body.text).toEqual(["Hello world"]);
     expect(body.source_lang).toBe("EN");
     expect(body.target_lang).toBe("ES");
     expect(body.model_type).toBe("latency_optimized");

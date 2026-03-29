@@ -4,7 +4,11 @@ import {
   postprocessText,
 } from "./newline-workaround.js";
 
-const DEEPL_BASE_URL = "https://api.deepl.com/v2";
+function getDeeplBaseUrl(apiKey: string): string {
+  return apiKey.endsWith(":fx")
+    ? "https://api-free.deepl.com/v2"
+    : "https://api.deepl.com/v2";
+}
 
 export interface TranslateOptions {
   text: string;
@@ -17,8 +21,8 @@ export interface TranslateOptions {
 
 export async function translateText(opts: TranslateOptions): Promise<string> {
   const processedText = preprocessText(opts.text, opts.modelType);
-  const body: Record<string, string> = {
-    text: processedText,
+  const body: Record<string, string | string[]> = {
+    text: [processedText],
     source_lang: opts.sourceLang,
     target_lang: opts.targetLang,
     model_type: opts.modelType,
@@ -26,7 +30,8 @@ export async function translateText(opts: TranslateOptions): Promise<string> {
   if (opts.glossaryId) {
     body.glossary_id = opts.glossaryId;
   }
-  const response = await fetch(`${DEEPL_BASE_URL}/translate`, {
+  const baseUrl = getDeeplBaseUrl(opts.apiKey);
+  const response = await fetch(`${baseUrl}/translate`, {
     method: "POST",
     headers: {
       Authorization: `DeepL-Auth-Key ${opts.apiKey}`,
