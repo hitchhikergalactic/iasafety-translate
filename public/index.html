@@ -88,6 +88,7 @@
   <div class="tab" data-panel="yaml">YAML</div>
   <div class="tab" data-panel="glossary">Glossary</div>
   <div class="tab" data-panel="import">Import</div>
+  <div class="tab" data-panel="batch">Batch</div>
 </div>
 
 <!-- Full Pipeline -->
@@ -263,6 +264,32 @@
   </div>
 </div>
 
+<!-- Batch -->
+<div class="panel" id="batch">
+  <h2>Batch Translation</h2>
+  <div class="controls">
+    <input type="text" id="batch-dir" placeholder="/path/to/source/directory" style="flex:1; min-width:300px">
+    <select id="batch-lang"></select>
+    <select id="batch-model">
+      <option value="quality_optimized">quality_optimized</option>
+      <option value="latency_optimized">latency_optimized</option>
+      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
+    </select>
+  </div>
+  <div class="controls">
+    <label><input type="checkbox" id="batch-skip-revision"> Skip Revision</label>
+    <label><input type="checkbox" id="batch-skip-autofix"> Skip Autofix</label>
+    <input type="text" id="batch-output-dir" placeholder="Output directory (optional)" style="flex:1; min-width:200px">
+  </div>
+  <div class="controls">
+    <button id="batch-discover">Discover Files</button>
+    <button class="primary" id="batch-run">Run Batch</button>
+  </div>
+  <div id="batch-status"></div>
+  <div id="batch-files" style="margin-top:12px"></div>
+  <div id="batch-results" style="margin-top:12px"></div>
+</div>
+
 <script>
 // --- Tabs ---
 document.querySelectorAll('.tab').forEach(tab => {
@@ -308,7 +335,7 @@ async function init() {
 
   try {
     const { languages } = await api('/api/languages');
-    for (const sel of ['pipe-lang', 'deepl-lang']) {
+    for (const sel of ['pipe-lang', 'deepl-lang', 'batch-lang']) {
       const el = document.getElementById(sel);
       languages.forEach(l => {
         const opt = document.createElement('option');
@@ -606,6 +633,88 @@ document.getElementById('import-send').addEventListener('click', () => {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('[data-panel="pipeline"]').classList.add('active');
   document.getElementById('pipeline').classList.add('active');
+});
+
+// --- Batch ---
+document.getElementById('batch-discover').addEventListener('click', async () => {
+  const statusEl = document.getElementById('batch-status');
+  const filesEl = document.getElementById('batch-files');
+  filesEl.innerHTML = '';
+  status(statusEl, 'Discovering files...', 'loading');
+
+  try {
+    const data = await api('/api/batch/discover', {
+      method: 'POST',
+      body: { directory: document.getElementById('batch-dir').value },
+    });
+    status(statusEl, `Found ${data.count} file(s)`, 'ok');
+    if (data.files.length === 0) {
+      filesEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No source files found in that directory.</p>';
+    } else {
+      filesEl.innerHTML = `
+        <h2>Discovered Files (${data.count})</h2>
+        <div class="result-box" style="margin-top:8px">${data.files.map(f => esc(f)).join('\n')}</div>
+      `;
+    }
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  }
+});
+
+document.getElementById('batch-run').addEventListener('click', async () => {
+  const btn = document.getElementById('batch-run');
+  const statusEl = document.getElementById('batch-status');
+  const resultsEl = document.getElementById('batch-results');
+
+  btn.disabled = true;
+  resultsEl.innerHTML = '';
+  status(statusEl, 'Running batch translation...', 'loading');
+
+  try {
+    const data = await api('/api/batch/run', {
+      method: 'POST',
+      body: {
+        directory: document.getElementById('batch-dir').value,
+        targetLanguage: document.getElementById('batch-lang').value,
+        modelType: document.getElementById('batch-model').value,
+        skipRevision: document.getElementById('batch-skip-revision').checked,
+        skipAutofix: document.getElementById('batch-skip-autofix').checked,
+        outputDir: document.getElementById('batch-output-dir').value || undefined,
+      },
+    });
+
+    const results = data.results ?? [];
+    const completed = results.filter(r => r.status === 'done').length;
+    const errors = results.filter(r => r.status === 'error').length;
+
+    status(statusEl, `Batch complete: ${completed} done, ${errors} error(s)`, errors > 0 ? 'error' : 'ok');
+
+    if (results.length > 0) {
+      resultsEl.innerHTML = `
+        <h2>Results</h2>
+        <table class="glossary-table" style="margin-top:8px">
+          <thead><tr><th>File</th><th>Status</th><th>Output</th><th>Error</th></tr></thead>
+          <tbody>
+            ${results.map(r => `
+              <tr>
+                <td>${esc(r.file ?? '')}</td>
+                <td style="color:${r.status === 'done' ? '#6d6' : '#d66'}">${esc(r.status ?? '')}</td>
+                <td>${esc(r.outputPath ?? '')}</td>
+                <td>${esc(r.error ?? '')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <p style="margin-top:8px; font-size:13px; color:#aaa">${completed} completed, ${errors} error(s)</p>
+      `;
+    } else {
+      resultsEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No results returned.</p>';
+    }
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
 });
 </script>
 </body>

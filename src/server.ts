@@ -17,6 +17,7 @@ import { getTagList } from "./markdown/tags.js";
 import { buildPrompt, REVISE_PREFIX, SPOT_ERRORS_BODY, IMPROVE_FLOW_BODY, GLOBAL_REVIEW } from "./config/prompts.js";
 import { fetchPage } from "./import/fetcher.js";
 import { detectSource, extractContent } from "./import/extractors.js";
+import { discoverFiles } from "./batch/runner.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -268,6 +269,40 @@ app.post("/api/import", async (req, res) => {
     const source = detectSource(url);
     const content = extractContent(html, source);
     res.json(content);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Batch: list source files in a directory
+app.post("/api/batch/discover", async (req, res) => {
+  try {
+    const { directory } = req.body;
+    if (!directory) return res.status(400).json({ error: "directory is required" });
+    const files = await discoverFiles(directory);
+    res.json({ files, count: files.length });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Batch: translate all files (returns final result, not streaming)
+app.post("/api/batch/run", async (req, res) => {
+  try {
+    const { directory, targetLanguage, outputDir, modelType, skipRevision, skipAutofix } = req.body;
+    if (!directory || !targetLanguage) {
+      return res.status(400).json({ error: "directory and targetLanguage are required" });
+    }
+    const { runBatch } = await import("./batch/runner.js");
+    const result = await runBatch({
+      sourceDir: directory,
+      targetLanguage,
+      outputDir,
+      deeplModelType: modelType,
+      skipRevision,
+      skipAutofix,
+    });
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
