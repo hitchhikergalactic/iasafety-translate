@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>tlon-translate</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #ddd; padding: 20px; }
+    h1 { font-size: 1.4em; margin-bottom: 16px; color: #fff; }
+    h2 { font-size: 1.1em; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .tabs { display: flex; gap: 2px; margin-bottom: 16px; }
+    .tab { padding: 8px 16px; background: #222; border: 1px solid #333; border-bottom: none; cursor: pointer; color: #888; border-radius: 6px 6px 0 0; }
+    .tab.active { background: #1a1a2e; color: #fff; border-color: #444; }
+
+    .panel { display: none; background: #1a1a2e; border: 1px solid #333; border-radius: 0 8px 8px 8px; padding: 20px; }
+    .panel.active { display: block; }
+
+    .row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .col { flex: 1; min-width: 300px; }
+
+    textarea { width: 100%; min-height: 200px; background: #0d0d1a; color: #eee; border: 1px solid #333; border-radius: 6px; padding: 10px; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; resize: vertical; }
+    textarea:focus { outline: none; border-color: #556; }
+
+    select, input[type="text"], input[type="number"] {
+      background: #0d0d1a; color: #eee; border: 1px solid #333; border-radius: 4px; padding: 6px 10px; font-size: 13px;
+    }
+    select:focus, input:focus { outline: none; border-color: #556; }
+
+    label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #aaa; cursor: pointer; }
+    label input[type="checkbox"] { accent-color: #66a; }
+
+    button {
+      padding: 8px 20px; background: #2a2a4a; color: #ddd; border: 1px solid #444;
+      border-radius: 6px; cursor: pointer; font-size: 13px; transition: background 0.15s;
+    }
+    button:hover { background: #3a3a5a; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary { background: #335; border-color: #557; }
+    button.primary:hover { background: #446; }
+    button.danger { background: #422; border-color: #644; }
+    button.danger:hover { background: #533; }
+
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+
+    .result-box { background: #0d0d1a; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-top: 8px; white-space: pre-wrap; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; max-height: 400px; overflow-y: auto; }
+
+    .stage { margin-top: 12px; border: 1px solid #2a2a3a; border-radius: 6px; overflow: hidden; }
+    .stage-header { padding: 8px 12px; background: #1e1e2e; cursor: pointer; display: flex; justify-content: space-between; font-size: 13px; }
+    .stage-header .time { color: #666; }
+    .stage-body { padding: 10px; background: #0d0d1a; white-space: pre-wrap; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; max-height: 300px; overflow-y: auto; display: none; }
+    .stage-body.open { display: block; }
+
+    .status { padding: 6px 12px; border-radius: 4px; font-size: 13px; margin-top: 8px; }
+    .status.ok { background: #1a2e1a; color: #6d6; border: 1px solid #2a4a2a; }
+    .status.error { background: #2e1a1a; color: #d66; border: 1px solid #4a2a2a; }
+    .status.loading { background: #1a1a2e; color: #88a; border: 1px solid #2a2a4a; }
+
+    .error-list { list-style: none; padding: 0; }
+    .error-list li { padding: 4px 8px; background: #2e1a1a; border-left: 3px solid #d66; margin-bottom: 4px; font-size: 13px; border-radius: 0 4px 4px 0; }
+    .ok-msg { color: #6d6; font-size: 13px; }
+
+    .glossary-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .glossary-table th, .glossary-table td { padding: 6px 10px; border: 1px solid #333; text-align: left; }
+    .glossary-table th { background: #1e1e2e; color: #aaa; }
+
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #444; border-top-color: #88a; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .health { position: fixed; top: 10px; right: 16px; font-size: 12px; }
+    .health .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .health .dot.green { background: #6d6; }
+    .health .dot.red { background: #d66; }
+    .health .dot.yellow { background: #dd6; }
+  </style>
+</head>
+<body>
+
+<h1>tlon-translate</h1>
+<div class="health" id="health"></div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="pipeline">Full Pipeline</div>
+  <div class="tab" data-panel="deepl">DeepL Only</div>
+  <div class="tab" data-panel="autofix">Auto-Fix</div>
+  <div class="tab" data-panel="checks">Structural Checks</div>
+  <div class="tab" data-panel="yaml">YAML</div>
+  <div class="tab" data-panel="glossary">Glossary</div>
+  <div class="tab" data-panel="import">Import</div>
+</div>
+
+<!-- Full Pipeline -->
+<div class="panel active" id="pipeline">
+  <h2>Full Translation Pipeline</h2>
+  <div class="controls">
+    <select id="pipe-lang"></select>
+    <select id="pipe-model">
+      <option value="quality_optimized">quality_optimized</option>
+      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
+      <option value="latency_optimized">latency_optimized</option>
+    </select>
+    <label><input type="checkbox" id="pipe-skip-revision"> Skip AI Revision</label>
+    <label><input type="checkbox" id="pipe-skip-autofix"> Skip Auto-Fix</label>
+    <label>Chunk size: <input type="number" id="pipe-chunk" value="10" style="width:50px"></label>
+    <label>Parallel: <input type="number" id="pipe-parallel" value="3" style="width:50px"></label>
+    <button class="primary" id="pipe-run">Translate</button>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h2>Source (English)</h2>
+      <textarea id="pipe-input" placeholder="Paste your English source text here..."></textarea>
+    </div>
+    <div class="col">
+      <h2>Final Output</h2>
+      <div class="result-box" id="pipe-output" style="min-height:200px"></div>
+    </div>
+  </div>
+  <div id="pipe-stages"></div>
+  <div id="pipe-status"></div>
+</div>
+
+<!-- DeepL Only -->
+<div class="panel" id="deepl">
+  <h2>DeepL Translation</h2>
+  <div class="controls">
+    <select id="deepl-lang"></select>
+    <select id="deepl-model">
+      <option value="quality_optimized">quality_optimized</option>
+      <option value="prefer_quality_optimized">prefer_quality_optimized</option>
+      <option value="latency_optimized">latency_optimized</option>
+    </select>
+    <button class="primary" id="deepl-run">Translate</button>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h2>Source</h2>
+      <textarea id="deepl-input" placeholder="Text to translate..."></textarea>
+    </div>
+    <div class="col">
+      <h2>Translation</h2>
+      <div class="result-box" id="deepl-output" style="min-height:200px"></div>
+    </div>
+  </div>
+  <div id="deepl-status"></div>
+</div>
+
+<!-- Auto-Fix -->
+<div class="panel" id="autofix">
+  <h2>Auto-Fix Rules</h2>
+  <div class="controls">
+    <select id="fix-lang">
+      <option value="fr">French</option>
+      <option value="it">Italian</option>
+      <option value="es">Spanish</option>
+      <option value="de">German</option>
+      <option value="en">English</option>
+    </select>
+    <button class="primary" id="fix-run">Apply Fixes</button>
+    <button id="fix-lang-only">Language Rules Only</button>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h2>Input</h2>
+      <textarea id="fix-input" placeholder="Paste translated text to fix..."></textarea>
+    </div>
+    <div class="col">
+      <h2>Fixed Output</h2>
+      <div class="result-box" id="fix-output" style="min-height:200px"></div>
+    </div>
+  </div>
+  <div id="fix-status"></div>
+</div>
+
+<!-- Structural Checks -->
+<div class="panel" id="checks">
+  <h2>Structural Checks</h2>
+  <div class="controls">
+    <button class="primary" id="checks-run">Run Checks</button>
+  </div>
+  <textarea id="checks-input" placeholder="Paste text to check heading hierarchy and balanced characters..." style="min-height:150px"></textarea>
+  <div id="checks-results" style="margin-top:12px"></div>
+</div>
+
+<!-- YAML -->
+<div class="panel" id="yaml">
+  <h2>YAML Frontmatter</h2>
+  <div class="controls">
+    <button class="primary" id="yaml-parse">Parse Document</button>
+    <select id="yaml-type">
+      <option value="article">Article</option>
+      <option value="tag">Tag</option>
+      <option value="author">Author</option>
+      <option value="collection">Collection</option>
+    </select>
+    <button id="yaml-validate">Validate Fields</button>
+  </div>
+  <div class="row">
+    <div class="col">
+      <h2>Document</h2>
+      <textarea id="yaml-input" placeholder="---&#10;title: My Article&#10;tags:&#10;  - ethics&#10;---&#10;Body text here..."></textarea>
+    </div>
+    <div class="col">
+      <h2>Parsed</h2>
+      <div class="result-box" id="yaml-output" style="min-height:200px"></div>
+    </div>
+  </div>
+  <div id="yaml-status"></div>
+</div>
+
+<!-- Glossary -->
+<div class="panel" id="glossary">
+  <h2>Glossary Management</h2>
+
+  <div style="margin-bottom: 16px">
+    <h2>Local Glossary (JSON)</h2>
+    <div class="controls">
+      <select id="gloss-lang">
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="it">Italian</option>
+        <option value="de">German</option>
+      </select>
+      <button class="primary" id="gloss-parse">Analyze</button>
+    </div>
+    <textarea id="gloss-input" style="min-height:100px" placeholder='[{"en":"existential risk","es":"riesgo existencial","type":"variable"}]'></textarea>
+    <div class="result-box" id="gloss-output" style="margin-top:8px"></div>
+  </div>
+
+  <div>
+    <h2>DeepL Glossaries (Remote)</h2>
+    <div class="controls">
+      <button id="gloss-deepl-list">List Glossaries</button>
+    </div>
+    <div id="gloss-deepl-output"></div>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="panel" id="import">
+  <h2>Import Article from URL</h2>
+  <div class="controls">
+    <input type="text" id="import-url" placeholder="https://..." style="flex:1; min-width:300px">
+    <button class="primary" id="import-run">Import</button>
+  </div>
+  <div id="import-status"></div>
+  <div id="import-result" style="display:none; margin-top:16px">
+    <div style="margin-bottom:12px">
+      <h2>Source Type</h2>
+      <div class="result-box" id="import-source" style="min-height:auto; padding:6px 10px"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <h2>Title</h2>
+      <div class="result-box" id="import-title" style="min-height:auto; padding:6px 10px"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <h2>Body (Markdown)</h2>
+      <textarea id="import-body" readonly style="min-height:300px; width:100%" rows="15"></textarea>
+    </div>
+    <div class="controls">
+      <button class="primary" id="import-send">Send to Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Tabs ---
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.panel).classList.add('active');
+  });
+});
+
+// --- Helpers ---
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+function status(el, msg, type) {
+  el.innerHTML = `<div class="status ${type}">${type === 'loading' ? '<span class="spinner"></span>' : ''}${esc(msg)}</div>`;
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// --- Init ---
+async function init() {
+  const healthEl = document.getElementById('health');
+  try {
+    const h = await api('/api/health');
+    if (h.ok) {
+      healthEl.innerHTML = `<span class="dot green"></span>Keys loaded`;
+    } else {
+      healthEl.innerHTML = `<span class="dot red"></span>${esc(h.error)}`;
+    }
+  } catch (e) {
+    healthEl.innerHTML = `<span class="dot red"></span>Server error`;
+  }
+
+  try {
+    const { languages } = await api('/api/languages');
+    for (const sel of ['pipe-lang', 'deepl-lang']) {
+      const el = document.getElementById(sel);
+      languages.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l; opt.textContent = l;
+        if (l === 'spanish') opt.selected = true;
+        el.appendChild(opt);
+      });
+    }
+  } catch (e) { console.error(e); }
+}
+init();
+
+// --- Full Pipeline ---
+document.getElementById('pipe-run').addEventListener('click', async () => {
+  const btn = document.getElementById('pipe-run');
+  const statusEl = document.getElementById('pipe-status');
+  const stagesEl = document.getElementById('pipe-stages');
+  const outputEl = document.getElementById('pipe-output');
+
+  btn.disabled = true;
+  outputEl.textContent = '';
+  stagesEl.innerHTML = '';
+  status(statusEl, 'Running pipeline...', 'loading');
+
+  try {
+    const data = await api('/api/pipeline', {
+      method: 'POST',
+      body: {
+        text: document.getElementById('pipe-input').value,
+        targetLanguage: document.getElementById('pipe-lang').value,
+        modelType: document.getElementById('pipe-model').value,
+        skipRevision: document.getElementById('pipe-skip-revision').checked,
+        skipAutofix: document.getElementById('pipe-skip-autofix').checked,
+        chunkSize: parseInt(document.getElementById('pipe-chunk').value) || 10,
+        maxParallel: parseInt(document.getElementById('pipe-parallel').value) || 3,
+      },
+    });
+
+    outputEl.textContent = data.final;
+    stagesEl.innerHTML = data.stages.map((s, i) => `
+      <div class="stage">
+        <div class="stage-header" onclick="this.nextElementSibling.classList.toggle('open')">
+          <span>${esc(s.name)}</span>
+          <span class="time">${(s.durationMs / 1000).toFixed(1)}s</span>
+        </div>
+        <div class="stage-body">${esc(s.output)}</div>
+      </div>
+    `).join('');
+
+    const totalMs = data.stages.reduce((sum, s) => sum + s.durationMs, 0);
+    status(statusEl, `Done in ${(totalMs / 1000).toFixed(1)}s (${data.stages.length} stages)`, 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// --- DeepL Only ---
+document.getElementById('deepl-run').addEventListener('click', async () => {
+  const btn = document.getElementById('deepl-run');
+  const statusEl = document.getElementById('deepl-status');
+  btn.disabled = true;
+  document.getElementById('deepl-output').textContent = '';
+  status(statusEl, 'Translating...', 'loading');
+
+  try {
+    const data = await api('/api/translate/deepl', {
+      method: 'POST',
+      body: {
+        text: document.getElementById('deepl-input').value,
+        targetLanguage: document.getElementById('deepl-lang').value,
+        modelType: document.getElementById('deepl-model').value,
+      },
+    });
+    document.getElementById('deepl-output').textContent = data.result;
+    status(statusEl, 'Done', 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// --- Auto-Fix ---
+document.getElementById('fix-run').addEventListener('click', async () => {
+  const statusEl = document.getElementById('fix-status');
+  try {
+    const data = await api('/api/fix/autofix', {
+      method: 'POST',
+      body: {
+        text: document.getElementById('fix-input').value,
+        langCode: document.getElementById('fix-lang').value,
+      },
+    });
+    document.getElementById('fix-output').textContent = data.result;
+    status(statusEl, 'Fixes applied', 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  }
+});
+
+document.getElementById('fix-lang-only').addEventListener('click', async () => {
+  const statusEl = document.getElementById('fix-status');
+  try {
+    const data = await api('/api/fix/language', {
+      method: 'POST',
+      body: {
+        text: document.getElementById('fix-input').value,
+        langCode: document.getElementById('fix-lang').value,
+      },
+    });
+    document.getElementById('fix-output').textContent = data.result;
+    status(statusEl, 'Language rules applied', 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  }
+});
+
+// --- Structural Checks ---
+document.getElementById('checks-run').addEventListener('click', async () => {
+  const resultsEl = document.getElementById('checks-results');
+  try {
+    const data = await api('/api/fix/check', {
+      method: 'POST',
+      body: { text: document.getElementById('checks-input').value },
+    });
+
+    let html = '<h2>Heading Hierarchy</h2>';
+    if (data.headingErrors.length === 0) {
+      html += '<p class="ok-msg">No heading hierarchy issues found.</p>';
+    } else {
+      html += '<ul class="error-list">' + data.headingErrors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
+    }
+
+    html += '<h2 style="margin-top:12px">Balanced Characters</h2>';
+    if (data.balanceErrors.length === 0) {
+      html += '<p class="ok-msg">All characters balanced.</p>';
+    } else {
+      html += '<ul class="error-list">' + data.balanceErrors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
+    }
+
+    resultsEl.innerHTML = html;
+  } catch (e) {
+    resultsEl.innerHTML = `<div class="status error">${esc(e.message)}</div>`;
+  }
+});
+
+// --- YAML ---
+let lastParsedMeta = null;
+
+document.getElementById('yaml-parse').addEventListener('click', async () => {
+  const statusEl = document.getElementById('yaml-status');
+  try {
+    const data = await api('/api/yaml/parse', {
+      method: 'POST',
+      body: { document: document.getElementById('yaml-input').value },
+    });
+    lastParsedMeta = data.frontmatter;
+    let output = '';
+    if (data.frontmatter) {
+      output += 'FRONTMATTER:\n' + JSON.stringify(data.frontmatter, null, 2) + '\n\n';
+    } else {
+      output += 'No frontmatter found.\n\n';
+    }
+    output += 'BODY:\n' + data.body;
+    document.getElementById('yaml-output').textContent = output;
+    status(statusEl, 'Parsed', 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  }
+});
+
+document.getElementById('yaml-validate').addEventListener('click', async () => {
+  const statusEl = document.getElementById('yaml-status');
+  if (!lastParsedMeta) {
+    status(statusEl, 'Parse the document first', 'error');
+    return;
+  }
+  try {
+    const data = await api('/api/yaml/validate', {
+      method: 'POST',
+      body: {
+        meta: lastParsedMeta,
+        type: document.getElementById('yaml-type').value,
+      },
+    });
+    if (data.valid) {
+      status(statusEl, 'Valid! No issues found.', 'ok');
+    } else {
+      statusEl.innerHTML = '<ul class="error-list">' + data.errors.map(e => `<li>${esc(e)}</li>`).join('') + '</ul>';
+    }
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  }
+});
+
+// --- Glossary ---
+document.getElementById('gloss-parse').addEventListener('click', async () => {
+  const outputEl = document.getElementById('gloss-output');
+  try {
+    const data = await api('/api/glossary/parse', {
+      method: 'POST',
+      body: {
+        json: document.getElementById('gloss-input').value,
+        langCode: document.getElementById('gloss-lang').value,
+      },
+    });
+    let html = `Total entries: ${data.totalEntries} | With translation: ${data.termsWithTranslation} | Missing: ${data.termsMissing}`;
+    if (data.missingTerms.length > 0) {
+      html += '\n\nMissing terms:\n' + data.missingTerms.join('\n');
+    }
+    if (data.deeplTsv) {
+      html += '\n\nDeepL TSV:\n' + data.deeplTsv;
+    }
+    outputEl.textContent = html;
+  } catch (e) {
+    outputEl.textContent = 'Error: ' + e.message;
+  }
+});
+
+document.getElementById('gloss-deepl-list').addEventListener('click', async () => {
+  const outputEl = document.getElementById('gloss-deepl-output');
+  outputEl.innerHTML = '<div class="status loading"><span class="spinner"></span>Loading...</div>';
+  try {
+    const data = await api('/api/glossary/deepl');
+    if (data.glossaries.length === 0) {
+      outputEl.innerHTML = '<p style="color:#888; font-size:13px; margin-top:8px">No glossaries found.</p>';
+      return;
+    }
+    outputEl.innerHTML = `
+      <table class="glossary-table">
+        <thead><tr><th>Name</th><th>Source</th><th>Target</th><th>Entries</th><th></th></tr></thead>
+        <tbody>
+          ${data.glossaries.map(g => `
+            <tr>
+              <td>${esc(g.name)}</td>
+              <td>${esc(g.source_lang)}</td>
+              <td>${esc(g.target_lang)}</td>
+              <td>${g.entry_count}</td>
+              <td><button class="danger" onclick="deleteGlossary('${g.glossary_id}')">Delete</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    outputEl.innerHTML = `<div class="status error">${esc(e.message)}</div>`;
+  }
+});
+
+async function deleteGlossary(id) {
+  if (!confirm('Delete this glossary?')) return;
+  try {
+    await api(`/api/glossary/deepl/${id}`, { method: 'DELETE' });
+    document.getElementById('gloss-deepl-list').click();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// --- Import ---
+document.getElementById('import-run').addEventListener('click', async () => {
+  const btn = document.getElementById('import-run');
+  const statusEl = document.getElementById('import-status');
+  const resultEl = document.getElementById('import-result');
+
+  btn.disabled = true;
+  resultEl.style.display = 'none';
+  status(statusEl, 'Fetching and extracting...', 'loading');
+
+  try {
+    const data = await api('/api/import', {
+      method: 'POST',
+      body: { url: document.getElementById('import-url').value },
+    });
+
+    document.getElementById('import-source').textContent = data.source ?? '(unknown)';
+    document.getElementById('import-title').textContent = data.title ?? '(no title)';
+    document.getElementById('import-body').value = data.body ?? '';
+    resultEl.style.display = 'block';
+    status(statusEl, 'Import successful', 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('import-send').addEventListener('click', () => {
+  const body = document.getElementById('import-body').value;
+  document.getElementById('pipe-input').value = body;
+  // Switch to the Full Pipeline tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-panel="pipeline"]').classList.add('active');
+  document.getElementById('pipeline').classList.add('active');
+});
+</script>
+</body>
+</html>
