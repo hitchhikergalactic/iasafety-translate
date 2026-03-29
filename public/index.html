@@ -235,6 +235,52 @@
     </div>
     <div id="gloss-deepl-output"></div>
   </div>
+
+  <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 16px">
+    <h2>AI Glossary Generation</h2>
+    <div class="controls">
+      <select id="gloss-ai-lang"></select>
+      <button class="primary" id="gloss-ai-generate">Generate Missing Translations</button>
+    </div>
+    <p style="font-size:12px; color:#666; margin-bottom:8px">Uses the glossary JSON entered above. Select the target language to generate missing translations for.</p>
+    <div id="gloss-ai-status"></div>
+    <div id="gloss-ai-results" style="display:none; margin-top:12px">
+      <div style="margin-bottom:12px">
+        <h2>Generated Translations</h2>
+        <div class="result-box" id="gloss-ai-generated" style="min-height:80px"></div>
+      </div>
+      <div id="gloss-ai-unavailable-wrap" style="display:none; margin-bottom:12px">
+        <h2>Unavailable Terms</h2>
+        <div class="result-box" id="gloss-ai-unavailable" style="min-height:40px"></div>
+      </div>
+      <div class="controls">
+        <button id="gloss-ai-download">Download Updated Glossary</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 16px">
+    <h2>Document Term Filter</h2>
+    <p style="font-size:12px; color:#666; margin-bottom:8px">Find which candidate terms are relevant to a specific document.</p>
+    <div class="row">
+      <div class="col">
+        <h2>Document Text</h2>
+        <textarea id="gloss-filter-doc" placeholder="Paste the document text here..." style="min-height:150px"></textarea>
+      </div>
+      <div class="col">
+        <h2>Candidate Terms (one per line)</h2>
+        <textarea id="gloss-filter-terms" placeholder="existential risk&#10;artificial intelligence&#10;machine learning" style="min-height:150px"></textarea>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="primary" id="gloss-filter-run">Filter Relevant Terms</button>
+    </div>
+    <div id="gloss-filter-status"></div>
+    <div id="gloss-filter-results" style="display:none; margin-top:12px">
+      <h2>Relevant Terms</h2>
+      <div class="result-box" id="gloss-filter-output" style="min-height:80px"></div>
+    </div>
+  </div>
 </div>
 
 <!-- Import -->
@@ -335,7 +381,7 @@ async function init() {
 
   try {
     const { languages } = await api('/api/languages');
-    for (const sel of ['pipe-lang', 'deepl-lang', 'batch-lang']) {
+    for (const sel of ['pipe-lang', 'deepl-lang', 'batch-lang', 'gloss-ai-lang']) {
       const el = document.getElementById(sel);
       languages.forEach(l => {
         const opt = document.createElement('option');
@@ -633,6 +679,110 @@ document.getElementById('import-send').addEventListener('click', () => {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('[data-panel="pipeline"]').classList.add('active');
   document.getElementById('pipeline').classList.add('active');
+});
+
+// --- AI Glossary Generation ---
+let lastUpdatedGlossary = null;
+
+document.getElementById('gloss-ai-generate').addEventListener('click', async () => {
+  const btn = document.getElementById('gloss-ai-generate');
+  const statusEl = document.getElementById('gloss-ai-status');
+  const resultsEl = document.getElementById('gloss-ai-results');
+
+  const glossaryJson = document.getElementById('gloss-input').value.trim();
+  if (!glossaryJson) {
+    status(statusEl, 'Paste glossary JSON in the "Local Glossary (JSON)" textarea above', 'error');
+    return;
+  }
+
+  const langValue = document.getElementById('gloss-ai-lang').value;
+  // Map language name to code - get first two chars as heuristic, but use a lookup
+  const langCodeMap = { spanish: 'es', french: 'fr', italian: 'it', german: 'de', portuguese: 'pt', chinese: 'zh', japanese: 'ja', korean: 'ko', arabic: 'ar' };
+  const langCode = langCodeMap[langValue] || langValue.slice(0, 2);
+  const langName = langValue.charAt(0).toUpperCase() + langValue.slice(1);
+
+  btn.disabled = true;
+  resultsEl.style.display = 'none';
+  lastUpdatedGlossary = null;
+  status(statusEl, 'Generating missing translations...', 'loading');
+
+  try {
+    const data = await api('/api/glossary/generate', {
+      method: 'POST',
+      body: { glossaryJson, langCode, langName },
+    });
+
+    lastUpdatedGlossary = data.updatedGlossary;
+
+    const generatedEl = document.getElementById('gloss-ai-generated');
+    if (data.generated.length === 0) {
+      generatedEl.textContent = 'No new translations generated.';
+    } else {
+      generatedEl.textContent = data.generated.map(g => `${g.en} → ${g.translation}`).join('\n');
+    }
+
+    const unavailWrap = document.getElementById('gloss-ai-unavailable-wrap');
+    const unavailEl = document.getElementById('gloss-ai-unavailable');
+    if (data.unavailable && data.unavailable.length > 0) {
+      unavailEl.textContent = data.unavailable.join('\n');
+      unavailWrap.style.display = 'block';
+    } else {
+      unavailWrap.style.display = 'none';
+    }
+
+    resultsEl.style.display = 'block';
+    status(statusEl, `Done: ${data.generated.length} generated, ${(data.unavailable || []).length} unavailable`, 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('gloss-ai-download').addEventListener('click', () => {
+  if (!lastUpdatedGlossary) return;
+  const blob = new Blob([JSON.stringify(lastUpdatedGlossary, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'glossary-updated.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// --- Document Term Filter ---
+document.getElementById('gloss-filter-run').addEventListener('click', async () => {
+  const btn = document.getElementById('gloss-filter-run');
+  const statusEl = document.getElementById('gloss-filter-status');
+  const resultsEl = document.getElementById('gloss-filter-results');
+
+  btn.disabled = true;
+  resultsEl.style.display = 'none';
+  status(statusEl, 'Filtering relevant terms...', 'loading');
+
+  try {
+    const documentText = document.getElementById('gloss-filter-doc').value;
+    const termsRaw = document.getElementById('gloss-filter-terms').value;
+    const candidateTerms = termsRaw.split('\n').map(t => t.trim()).filter(Boolean);
+
+    const data = await api('/api/glossary/filter', {
+      method: 'POST',
+      body: { documentText, candidateTerms },
+    });
+
+    const outputEl = document.getElementById('gloss-filter-output');
+    if (data.relevantTerms.length === 0) {
+      outputEl.textContent = 'No relevant terms found.';
+    } else {
+      outputEl.textContent = data.relevantTerms.join('\n');
+    }
+    resultsEl.style.display = 'block';
+    status(statusEl, `Found ${data.count} relevant term(s)`, 'ok');
+  } catch (e) {
+    status(statusEl, e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 // --- Batch ---

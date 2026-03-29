@@ -13,6 +13,7 @@ import { applyLanguageFixes } from "./fix/autofix.js";
 import { splitDocument, parseFrontmatter, serializeFrontmatter, validateFields } from "./yaml/frontmatter.js";
 import { parseGlossary, getTermsForLanguage, getMissingTerms, formatGlossaryForDeepL } from "./glossary/local.js";
 import { listGlossaries, createGlossary, deleteGlossary } from "./glossary/deepl.js";
+import { generateMissingTranslations, filterGlossaryForDocument, mergeTranslations } from "./glossary/ai.js";
 import { getTagList } from "./markdown/tags.js";
 import { buildPrompt, REVISE_PREFIX, SPOT_ERRORS_BODY, IMPROVE_FLOW_BODY, GLOBAL_REVIEW } from "./config/prompts.js";
 import { fetchPage } from "./import/fetcher.js";
@@ -194,6 +195,42 @@ app.delete("/api/glossary/deepl/:id", async (req, res) => {
     const keys = await getKeys();
     await deleteGlossary(keys.deepl, req.params.id);
     res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI glossary generation: generate missing translations
+app.post("/api/glossary/generate", async (req, res) => {
+  try {
+    const { glossaryJson, langCode, langName } = req.body;
+    if (!glossaryJson || !langCode || !langName) {
+      return res.status(400).json({ error: "glossaryJson, langCode, and langName are required" });
+    }
+    const keys = await getKeys();
+    const glossary = parseGlossary(glossaryJson);
+    const generated = await generateMissingTranslations(glossary, langCode, langName, keys.google);
+    const merged = mergeTranslations(glossary, generated, langCode);
+    res.json({
+      generated: generated.filter((g) => g.translation !== "[TRANSLATION_UNAVAILABLE]"),
+      unavailable: generated.filter((g) => g.translation === "[TRANSLATION_UNAVAILABLE]").map((g) => g.en),
+      updatedGlossary: merged,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// AI glossary filtering: find relevant terms for a document
+app.post("/api/glossary/filter", async (req, res) => {
+  try {
+    const { documentText, candidateTerms } = req.body;
+    if (!documentText || !candidateTerms) {
+      return res.status(400).json({ error: "documentText and candidateTerms are required" });
+    }
+    const keys = await getKeys();
+    const relevant = await filterGlossaryForDocument(documentText, candidateTerms, "English", keys.google);
+    res.json({ relevantTerms: relevant, count: relevant.length });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
