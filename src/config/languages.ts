@@ -19,6 +19,7 @@ export const LANGUAGES: LanguageProperties[] = [
   { name: "japanese", standard: "japanese", code: "ja", locale: "ja_JP", iso6392: "jpn" },
   { name: "korean", standard: "korean", code: "ko", locale: "ko_KR", iso6392: "kor" },
   { name: "polish", standard: "polish", code: "pl", locale: "pl_PL", iso6392: "pol" },
+  { name: "portuguese", standard: "portuguese", code: "pt", locale: "pt_PT", iso6392: "por" },
   { name: "russian", standard: "russian", code: "ru", locale: "ru_RU", iso6392: "rus" },
   { name: "serbian", standard: "serbian", code: "sr", locale: "sr_RS", iso6392: "srp" },
   { name: "spanish", standard: "spanish", code: "es", locale: "es_ES", iso6392: "spa" },
@@ -27,7 +28,7 @@ export const LANGUAGES: LanguageProperties[] = [
 
 export const PROJECT_LANGUAGES = [
   "arabic", "chinese", "english", "french", "italian",
-  "japanese", "korean", "polish", "russian", "serbian", "spanish", "turkish",
+  "japanese", "korean", "polish", "portuguese", "russian", "serbian", "spanish", "turkish",
 ];
 
 export const TARGET_LANGUAGES = PROJECT_LANGUAGES.filter((l) => l !== "english");
@@ -51,6 +52,7 @@ const SEPARATORS: Record<string, { thousands: string; decimal: string }> = {
   it: { thousands: ".", decimal: "," },
   ja: { thousands: ",", decimal: "." },
   ko: { thousands: ",", decimal: "." },
+  pt: { thousands: ".", decimal: "," },
   ru: { thousands: "\u202F", decimal: "," },
   tr: { thousands: ".", decimal: "," },
 };
@@ -67,19 +69,19 @@ export function getDecimalSeparator(code: string): string | undefined {
 const BARE_DIRS: Record<string, Record<string, string>> = {
   articles: {
     ar: "مجلات", en: "articles", es: "articulos", fr: "articles",
-    it: "articoli", ja: "記事", ko: "기사", ru: "статьи", tr: "makaleler", zh: "文章",
+    it: "articoli", ja: "記事", ko: "기사", pt: "artigos", ru: "статьи", tr: "makaleler", zh: "文章",
   },
   tags: {
     ar: "الأوسمة", en: "tags", es: "temas", fr: "sujets",
-    it: "soggetti", ja: "タグ", ko: "태그", ru: "теги", tr: "etiketler", zh: "标签",
+    it: "soggetti", ja: "タグ", ko: "태그", pt: "etiquetas", ru: "теги", tr: "etiketler", zh: "标签",
   },
   authors: {
     ar: "المؤلفون", en: "authors", es: "autores", fr: "auteurs",
-    it: "autori", ja: "著者", ko: "저자", ru: "авторы", tr: "yazarlar", zh: "作者",
+    it: "autori", ja: "著者", ko: "저자", pt: "autores", ru: "авторы", tr: "yazarlar", zh: "作者",
   },
   collections: {
     ar: "مجموعات", en: "collections", es: "colecciones", fr: "collections",
-    it: "collezioni", ja: "コレクション", ko: "컬렉션", ru: "коллекции", tr: "koleksiyonlar", zh: "合集",
+    it: "collezioni", ja: "コレクション", ko: "컬렉션", pt: "colecoes", ru: "коллекции", tr: "koleksiyonlar", zh: "合集",
   },
 };
 
@@ -90,7 +92,7 @@ export function getBareDir(langCode: string, category: string): string | undefin
 /** Figure label names per language. Ported from tlon-figure-names. */
 const FIGURE_NAMES: Record<string, string> = {
   ar: "شكل", de: "abbildung", en: "figure", es: "figura",
-  fr: "figure", it: "figura", ja: "図", ko: "그림", ru: "рисунок", tr: "şekil",
+  fr: "figure", it: "figura", ja: "図", ko: "그림", pt: "figura", ru: "рисунок", tr: "şekil",
 };
 
 export function getFigureName(code: string): string | undefined {
@@ -100,7 +102,7 @@ export function getFigureName(code: string): string | undefined {
 /** Image directory names per language. Ported from tlon-image-dirs. */
 const IMAGE_DIRS: Record<string, string> = {
   ar: "صور", de: "bilder", en: "images", es: "imagenes",
-  fr: "images", it: "immagini", ja: "画像", ko: "이미지", ru: "изображения", tr: "resimler",
+  fr: "images", it: "immagini", ja: "画像", ko: "이미지", pt: "imagens", ru: "изображения", tr: "resimler",
 };
 
 export function getImageDir(code: string): string | undefined {

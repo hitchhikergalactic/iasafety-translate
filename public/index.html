@@ -943,7 +943,7 @@ body > * { position: relative; z-index: 1; }
 
 <script>
 const API = window.location.origin;
-const LANG_CODE_MAP = {arabic:'ar',chinese:'zh',french:'fr',italian:'it',japanese:'ja',korean:'ko',polish:'pl',russian:'ru',serbian:'sr',spanish:'es',turkish:'tr'};
+const LANG_CODE_MAP = {arabic:'ar',chinese:'zh',french:'fr',italian:'it',japanese:'ja',korean:'ko',polish:'pl',portuguese:'pt',russian:'ru',serbian:'sr',spanish:'es',turkish:'tr'};
 
 // --- Tab switching ---
 const nav = document.getElementById('nav');
@@ -974,7 +974,7 @@ async function init() {
       const es = Array.from(sel.options).find(o => o.value === 'spanish');
       if (es) es.selected = true;
     });
-    const codes = ['ar','zh','en','fr','it','ja','ko','pl','ru','sr','es','tr'];
+    const codes = ['ar','zh','en','fr','it','ja','ko','pl','pt','ru','sr','es','tr'];
     const fixSel = document.getElementById('fix-lang-code');
     codes.forEach(c => {
       const opt = document.createElement('option');

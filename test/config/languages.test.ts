@@ -35,8 +35,8 @@ describe("PROJECT_LANGUAGES", () => {
     expect(PROJECT_LANGUAGES).toContain("english");
   });
 
-  it("has 12 languages", () => {
-    expect(PROJECT_LANGUAGES).toHaveLength(12);
+  it("has 13 languages", () => {
+    expect(PROJECT_LANGUAGES).toHaveLength(13);
   });
 });
 
@@ -45,8 +45,8 @@ describe("TARGET_LANGUAGES", () => {
     expect(TARGET_LANGUAGES).not.toContain("english");
   });
 
-  it("has 11 languages", () => {
-    expect(TARGET_LANGUAGES).toHaveLength(11);
+  it("has 12 languages", () => {
+    expect(TARGET_LANGUAGES).toHaveLength(12);
   });
 });
 
