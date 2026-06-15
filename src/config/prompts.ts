@@ -33,7 +33,7 @@ export const IMPROVE_FLOW_BODY =
 export const GLOBAL_REVIEW =
   `I am sharing with you a complete article that has been translated from English into %s, along with the English original. The translation was produced in two phases: first, machine translation (DeepL), then paragraph-by-paragraph AI revision. Your task is to perform a final global review of the translation---the kind of review a human editor would do after the paragraph-level corrections:
 
-a) Fix terminological inconsistencies: the two-phase process may have introduced different translations for the same term in different paragraphs. Ensure that key terms are translated consistently throughout the entire article.
+a) Fix terminological inconsistencies: the two-phase process may have introduced different translations for the same term in different paragraphs. Ensure that key terms are translated consistently throughout the entire article. %s
 
 b) Check overall coherence and meaning: read the translation as a whole and verify that it reads naturally and makes sense. If anything sounds odd, awkward, or potentially incorrect, compare it with the English original and correct the translation as needed.
 
