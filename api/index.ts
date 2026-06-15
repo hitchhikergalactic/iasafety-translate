@@ -55,11 +55,12 @@ app.post("/api/translate/revise", async (req, res) => {
     const { sourceText, translatedText, targetLanguage } = req.body;
     const keys = await getKeys();
     const config: RevisionConfig = {
-      googleApiKey: keys.google, targetLanguage,
-      targetFileName: "web-input.md",
-      chunkSize: req.body.chunkSize ?? 10,
-      maxParallel: req.body.maxParallel ?? 3,
-    };
+  googleApiKey: keys.google, targetLanguage,
+  targetFileName: "web-input.md",
+  chunkSize: req.body.chunkSize ?? 10,
+  maxParallel: req.body.maxParallel ?? 3,
+  glossaryContent: req.body.glossaryContent ?? "",  // ← añadir esta línea
+};
     const result = await reviseTranslation(sourceText, translatedText, config);
     res.json({ result });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
