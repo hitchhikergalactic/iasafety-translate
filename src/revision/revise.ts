@@ -130,7 +130,6 @@ async function runParagraphPass(
 
   return results.flat().join("\n\n");
 }
-
 async function runGlobalReview(
   sourceText: string,
   translatedText: string,
@@ -141,7 +140,11 @@ async function runGlobalReview(
     model: config.globalReviewModel ?? DEFAULT_GLOBAL_REVIEW_MODEL,
   });
 
-  const prompt = buildPrompt(GLOBAL_REVIEW, config.targetLanguage) +
+  const glossaryInstruction = config.glossaryContent
+    ? `When choosing translations for technical terms, follow this glossary exactly (format: English term → Spanish translation):\n${config.glossaryContent}`
+    : "";
+
+  const prompt = buildPrompt(GLOBAL_REVIEW, config.targetLanguage, glossaryInstruction) +
     "\n\n--- ENGLISH ORIGINAL ---\n" + sourceText +
     "\n\n--- TRANSLATION ---\n" + translatedText;
 
