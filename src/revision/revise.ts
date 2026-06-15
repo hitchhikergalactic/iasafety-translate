@@ -25,6 +25,7 @@ export interface RevisionConfig {
   chunkSize?: number;
   maxParallel?: number;
   glossaryFileName?: string;
+  glossaryContent?: string;  // ← añadir esta línea
   spotErrorsModel?: string;
   improveFlowModel?: string;
   globalReviewModel?: string;
