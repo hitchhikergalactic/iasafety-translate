@@ -47,8 +47,6 @@ body {
   flex-direction: column;
   -webkit-font-smoothing: antialiased;
 }
-
-/* --- Header --- */
 header {
   border-bottom: 1px solid var(--border);
   padding: 0 2rem;
@@ -76,7 +74,6 @@ header {
   flex-shrink: 0;
 }
 .logo span { color: var(--accent); }
-
 nav {
   display: flex;
   gap: 0;
@@ -111,7 +108,6 @@ nav button.active::after {
   background: var(--accent);
   border-radius: 2px 2px 0 0;
 }
-
 .health-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
@@ -121,8 +117,6 @@ nav button.active::after {
 }
 .health-dot.ok { background: var(--success); }
 .health-dot.error { background: var(--error); }
-
-/* --- Main --- */
 main {
   max-width: 1280px;
   width: 100%;
@@ -130,12 +124,9 @@ main {
   padding: 2rem;
   flex: 1;
 }
-
-/* --- Sections --- */
 .section { display: none; }
 .section.active { display: block; animation: fadeIn .3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
 .section-header { margin-bottom: 2rem; }
 .section-header h1 {
   font-family: var(--font-serif);
@@ -150,8 +141,6 @@ main {
   font-size: .95rem;
   max-width: 600px;
 }
-
-/* --- Cards --- */
 .card {
   background: var(--surface-raised);
   border: 1px solid var(--border);
@@ -180,8 +169,6 @@ main {
   background: var(--accent-light);
   color: var(--accent);
 }
-
-/* --- Form elements --- */
 .form-row {
   display: flex;
   gap: 1rem;
@@ -250,8 +237,6 @@ select {
   accent-color: var(--accent);
   width: 16px; height: 16px;
 }
-
-/* --- Buttons --- */
 .btn {
   font-family: var(--font-sans);
   font-size: .8rem;
@@ -300,8 +285,6 @@ select {
   flex-wrap: wrap;
   align-items: center;
 }
-
-/* --- Output --- */
 .output-area {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -322,8 +305,6 @@ select {
   color: var(--text-muted);
   font-style: italic;
 }
-
-/* --- Status / Spinner --- */
 .status {
   font-size: .8rem;
   color: var(--text-secondary);
@@ -341,8 +322,6 @@ select {
   animation: spin .6s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* --- Stage pipeline --- */
 .stages { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
 .stage {
   display: flex;
@@ -365,16 +344,12 @@ select {
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 .stage-name { flex: 1; font-weight: 500; }
 .stage-time { color: var(--text-muted); font-family: var(--font-mono); font-size: .75rem; }
-
-/* --- Two-column layout --- */
 .columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.25rem;
 }
 @media (max-width: 768px) { .columns { grid-template-columns: 1fr; } }
-
-/* --- Table --- */
 .results-table {
   width: 100%;
   border-collapse: collapse;
@@ -399,8 +374,6 @@ select {
 .results-table tr:last-child td { border-bottom: none; }
 .results-table .status-done { color: var(--success); font-weight: 500; }
 .results-table .status-error { color: var(--error); font-weight: 500; }
-
-/* --- Tags / Terms --- */
 .tag {
   display: inline-block;
   font-size: .7rem;
@@ -422,8 +395,6 @@ select {
   color: var(--accent-hover);
   font-family: var(--font-mono);
 }
-
-/* --- Tooltips --- */
 .tip {
   position: relative;
   display: inline-flex;
@@ -466,7 +437,6 @@ select {
   box-shadow: var(--shadow-lg);
 }
 .tip:hover::after { opacity: 1; }
-
 .gh-link {
   color: var(--text-muted);
   margin-left: auto;
@@ -476,8 +446,6 @@ select {
   flex-shrink: 0;
 }
 .gh-link:hover { color: var(--text); }
-
-/* --- Footer --- */
 footer {
   text-align: center;
   padding: 1.5rem;
@@ -486,8 +454,6 @@ footer {
   border-top: 1px solid var(--border);
   margin-top: 2rem;
 }
-
-/* Subtle noise texture */
 body::before {
   content: '';
   position: fixed;
@@ -530,7 +496,6 @@ body > * { position: relative; z-index: 1; }
     <h1>Translation Pipeline</h1>
     <p>Full end-to-end workflow: paste or import text, translate with DeepL, revise with AI, and auto-fix.</p>
   </div>
-
   <div class="card">
     <div class="card-title">Source Text</div>
     <div class="form-row">
@@ -547,7 +512,6 @@ body > * { position: relative; z-index: 1; }
       <textarea id="pipe-source" class="tall" placeholder="Paste English text or import from URL above..."></textarea>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">Configuration</div>
     <div class="form-row">
@@ -572,12 +536,10 @@ body > * { position: relative; z-index: 1; }
       <span class="status" id="pipe-status"></span>
     </div>
   </div>
-
   <div class="card" id="pipe-stages-card" style="display:none;">
     <div class="card-title">Progress</div>
     <div class="stages" id="pipe-stages"></div>
   </div>
-
   <div class="card" id="pipe-result-card" style="display:none;">
     <div class="card-title">Result</div>
     <div class="output-area" id="pipe-output"></div>
@@ -593,7 +555,6 @@ body > * { position: relative; z-index: 1; }
     <h1>Import Article</h1>
     <p>Fetch and extract content from EA Forum, 80,000 Hours, or any web page.</p>
   </div>
-
   <div class="card">
     <div class="card-title">Source URL</div>
     <div class="form-row">
@@ -607,7 +568,6 @@ body > * { position: relative; z-index: 1; }
     </div>
     <span class="status" id="import-status"></span>
   </div>
-
   <div class="card" id="import-result-card" style="display:none;">
     <div class="card-title">Extracted Content <span class="badge" id="import-source-badge"></span></div>
     <div class="form-group" style="margin-bottom:1rem;">
@@ -631,7 +591,6 @@ body > * { position: relative; z-index: 1; }
     <h1>DeepL Translate</h1>
     <p>Direct machine translation via the DeepL API with newline-preservation workaround for quality mode.</p>
   </div>
-
   <div class="columns">
     <div class="card">
       <div class="card-title">Source <span class="badge">English</span></div>
@@ -673,7 +632,6 @@ body > * { position: relative; z-index: 1; }
     <h1>AI Revision</h1>
     <p>Three-pass Gemini revision: spot errors, improve flow, global review.</p>
   </div>
-
   <div class="columns">
     <div class="card">
       <div class="card-title">English Source</div>
@@ -684,7 +642,6 @@ body > * { position: relative; z-index: 1; }
       <textarea id="rev-translated" placeholder="Paste the translation to be revised..."></textarea>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">Configuration</div>
     <div class="form-row">
@@ -701,12 +658,16 @@ body > * { position: relative; z-index: 1; }
         <input type="number" id="rev-parallel" value="3" min="1" max="10">
       </div>
     </div>
-    <div class="btn-row">
+    <!-- NUEVO: campo de glosario para revisión global -->
+    <div class="form-group" style="margin-top:1rem;">
+      <label>Glossary TSV (optional) <span class="tip" data-tip="Paste the TSV from the Glossary tab. Gemini will enforce these term mappings during global review.">?</span></label>
+      <textarea id="rev-glossary" style="min-height:80px;" placeholder="AI safety&#9;IA safety&#10;alignment&#9;alineamiento&#10;compute&#9;cómputo&#10;..."></textarea>
+    </div>
+    <div class="btn-row" style="margin-top:1rem;">
       <button class="btn btn-primary" id="rev-btn">Run 3-Pass Revision</button>
       <span class="status" id="rev-status"></span>
     </div>
   </div>
-
   <div class="card" id="rev-result-card" style="display:none;">
     <div class="card-title">Revised Translation</div>
     <div class="output-area" id="rev-output"></div>
@@ -722,7 +683,6 @@ body > * { position: relative; z-index: 1; }
     <h1>Auto-fix & Check</h1>
     <p>Language-specific fixes (typography, separators, heading hierarchy) and structural validation.</p>
   </div>
-
   <div class="columns">
     <div class="card">
       <div class="card-title">Input Text</div>
@@ -760,7 +720,6 @@ body > * { position: relative; z-index: 1; }
     <h1>Glossary</h1>
     <p>Parse, generate AI translations for missing terms, filter relevant terms, and manage DeepL glossaries.</p>
   </div>
-
   <div class="card">
     <div class="card-title">Local Glossary <span class="badge">Parse & Analyze</span></div>
     <div class="form-group">
@@ -790,7 +749,6 @@ body > * { position: relative; z-index: 1; }
       </div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">AI Generation <span class="badge">Gemini</span></div>
     <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Generate translations for missing glossary terms using AI.</p>
@@ -817,7 +775,6 @@ body > * { position: relative; z-index: 1; }
       </div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">Document Filter <span class="badge">AI</span></div>
     <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:1rem;">Find which glossary terms are relevant to a specific document.</p>
@@ -840,7 +797,6 @@ body > * { position: relative; z-index: 1; }
       <div class="term-list" id="gloss-filter-terms"></div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">DeepL Glossaries <span class="badge">API</span></div>
     <div class="btn-row" style="margin-bottom:1rem;">
@@ -880,7 +836,6 @@ body > * { position: relative; z-index: 1; }
     <h1>Batch Translation</h1>
     <p>Translate all markdown files in a directory. Filters out existing translation files automatically.</p>
   </div>
-
   <div class="card">
     <div class="card-title">Source Directory</div>
     <div class="form-row">
@@ -898,7 +853,6 @@ body > * { position: relative; z-index: 1; }
       <div class="output-area" id="batch-files" style="max-height:200px;"></div>
     </div>
   </div>
-
   <div class="card">
     <div class="card-title">Batch Configuration</div>
     <div class="form-row">
@@ -927,7 +881,6 @@ body > * { position: relative; z-index: 1; }
       <span class="status" id="batch-run-status"></span>
     </div>
   </div>
-
   <div class="card" id="batch-result-card" style="display:none;">
     <div class="card-title">Results</div>
     <table class="results-table" id="batch-results-table">
@@ -945,7 +898,6 @@ body > * { position: relative; z-index: 1; }
 const API = window.location.origin;
 const LANG_CODE_MAP = {arabic:'ar',chinese:'zh',french:'fr',italian:'it',japanese:'ja',korean:'ko',polish:'pl',portuguese:'pt',russian:'ru',serbian:'sr',spanish:'es',turkish:'tr'};
 
-// --- Tab switching ---
 const nav = document.getElementById('nav');
 nav.addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
@@ -957,7 +909,6 @@ nav.addEventListener('click', e => {
 });
 function switchTab(tab) { nav.querySelector(`button[data-tab="${tab}"]`).click(); }
 
-// --- Init ---
 async function init() {
   try {
     const res = await fetch(API + '/api/languages');
@@ -996,7 +947,6 @@ async function init() {
 }
 init();
 
-// --- Helpers ---
 function setStatus(id, msg, type) {
   const el = document.getElementById(id);
   el.className = 'status' + (type ? ' ' + type : '');
@@ -1013,7 +963,7 @@ async function apiPost(path, body) {
   return data;
 }
 
-// --- PIPELINE ---
+// PIPELINE
 document.getElementById('pipe-import-btn').addEventListener('click', async () => {
   const url = document.getElementById('pipe-url').value.trim();
   if (!url) return;
@@ -1071,7 +1021,7 @@ document.getElementById('pipe-copy-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(document.getElementById('pipe-output').textContent);
 });
 
-// --- IMPORT ---
+// IMPORT
 document.getElementById('import-btn').addEventListener('click', async () => {
   const url = document.getElementById('import-url').value.trim();
   if (!url) return;
@@ -1095,7 +1045,7 @@ document.getElementById('import-copy-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(document.getElementById('import-body').textContent);
 });
 
-// --- TRANSLATE ---
+// TRANSLATE
 document.getElementById('tl-btn').addEventListener('click', async () => {
   const text = document.getElementById('tl-source').value.trim();
   if (!text) return;
@@ -1121,7 +1071,7 @@ document.getElementById('tl-to-revise-btn').addEventListener('click', () => {
   switchTab('revise');
 });
 
-// --- REVISE ---
+// REVISE — con glossaryContent
 document.getElementById('rev-btn').addEventListener('click', async () => {
   const src = document.getElementById('rev-source').value.trim();
   const tl = document.getElementById('rev-translated').value.trim();
@@ -1130,10 +1080,12 @@ document.getElementById('rev-btn').addEventListener('click', async () => {
   document.getElementById('rev-btn').disabled = true;
   try {
     const data = await apiPost('/api/translate/revise', {
-      sourceText: src, translatedText: tl,
+      sourceText: src,
+      translatedText: tl,
       targetLanguage: document.getElementById('rev-lang').value,
       chunkSize: parseInt(document.getElementById('rev-chunk').value),
-      maxParallel: parseInt(document.getElementById('rev-parallel').value)
+      maxParallel: parseInt(document.getElementById('rev-parallel').value),
+      glossaryContent: document.getElementById('rev-glossary').value.trim()
     });
     document.getElementById('rev-output').textContent = data.result;
     document.getElementById('rev-result-card').style.display = '';
@@ -1146,7 +1098,7 @@ document.getElementById('rev-copy-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(document.getElementById('rev-output').textContent);
 });
 
-// --- FIX ---
+// FIX
 document.getElementById('fix-all-btn').addEventListener('click', async () => {
   const text = document.getElementById('fix-input').value.trim();
   if (!text) return;
@@ -1192,7 +1144,7 @@ document.getElementById('fix-copy-btn').addEventListener('click', () => {
   navigator.clipboard.writeText(document.getElementById('fix-output').textContent);
 });
 
-// --- GLOSSARY ---
+// GLOSSARY
 document.getElementById('gloss-parse-btn').addEventListener('click', async () => {
   const json = document.getElementById('gloss-json').value.trim();
   if (!json) return;
@@ -1309,7 +1261,7 @@ document.getElementById('gloss-deepl-create-btn').addEventListener('click', asyn
   } catch(e) { setStatus('gloss-deepl-status', e.message, 'error'); }
 });
 
-// --- BATCH ---
+// BATCH
 document.getElementById('batch-discover-btn').addEventListener('click', async () => {
   const dir = document.getElementById('batch-dir').value.trim();
   if (!dir) return;
